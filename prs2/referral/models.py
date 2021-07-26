@@ -25,6 +25,7 @@ from pygeopkg.conversion.to_geopkg_geom import point_lists_to_gpkg_polygon, make
 from taggit.managers import TaggableManager
 from unidecode import unidecode
 
+from prs2.storage import PrsAzureStorage
 from referral.base import Audit, ActiveModel
 from referral.utils import smart_truncate, dewordify_text, as_row_subtract_referral_cell
 
@@ -1064,6 +1065,7 @@ class Record(ReferralBaseModel):
         max_length=255,
         upload_to="uploads/%Y/%m/%d",
         help_text="Allowed file types: TIF,JPG,GIF,PNG,DOC,DOCX,XLS,XLSX,CSV,PDF,TXT,ZIP,MSG,QGS,XML",
+        storage=PrsAzureStorage,
     )
     infobase_id = models.SlugField(
         blank=True,
@@ -1111,27 +1113,27 @@ class Record(ReferralBaseModel):
 
     @property
     def extension(self):
-        try:  # Account for SuspiciousFileOperation exceptions.
-            if self.uploaded_file and os.path.exists(self.uploaded_file.path):
+        if self.uploaded_file and self.uploaded_file.name:
+            try:
                 ext = os.path.splitext(self.uploaded_file.name)[1]
                 return ext.replace(".", "").upper()
-            else:
+            except:
                 return ""
-        except SuspiciousFileOperation:
+        else:
             return ""
 
     @property
     def filesize_str(self):
-        try:  # Account for SuspiciousFileOperation exceptions.
-            if self.uploaded_file and os.path.exists(self.uploaded_file.path):
-                num = self.uploaded_file.size
+        if self.uploaded_file and self.uploaded_file.name:
+            try:
+                num = self.uploaded_file.storage.size(self.uploaded_file.name)
                 for x in ["b", "Kb", "Mb", "Gb"]:
                     if num < 1024.0:
                         return "{:3.1f}{}".format(num, x)
                     num /= 1024.0
-            else:
+            except:
                 return ""
-        except SuspiciousFileOperation:
+        else:
             return ""
 
     def as_row(self):

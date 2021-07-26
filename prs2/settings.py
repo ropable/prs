@@ -169,6 +169,12 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'prs2', 'static'),)
 
+# Azure blob storage configuration
+AZURE_ACCOUNT_NAME = env('AZURE_ACCOUNT_NAME', '')
+AZURE_ACCOUNT_KEY = env('AZURE_ACCOUNT_KEY', '')
+AZURE_AZURE_CONTAINER = env('AZURE_AZURE_CONTAINER', '')
+AZURE_EXPIRATION_SECS = env('AZURE_EXPIRATION_SECS', 3600)
+
 # This is required to add context variables to all templates:
 STATIC_CONTEXT_VARS = {}
 
