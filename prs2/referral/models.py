@@ -6,7 +6,6 @@ import os
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db import models
-from django.core.exceptions import SuspiciousFileOperation
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import MaxLengthValidator
 from django.db.models import Q
@@ -22,7 +21,9 @@ from pygeopkg.core.field import Field
 from pygeopkg.shared.enumeration import GeometryType, SQLFieldTypes
 from pygeopkg.shared.constants import SHAPE
 from pygeopkg.conversion.to_geopkg_geom import point_lists_to_gpkg_polygon, make_gpkg_geom_header
+from storages.backends.azure_storage import AzureMissingResourceHttpError
 from taggit.managers import TaggableManager
+from tempfile import NamedTemporaryFile
 from unidecode import unidecode
 
 from prs2.storage import PrsAzureStorage
@@ -1067,6 +1068,9 @@ class Record(ReferralBaseModel):
         help_text="Allowed file types: TIF,JPG,GIF,PNG,DOC,DOCX,XLS,XLSX,CSV,PDF,TXT,ZIP,MSG,QGS,XML",
         storage=PrsAzureStorage,
     )
+    filesize = models.IntegerField(
+        blank=True, null=True, editable=False, help_text="Size of the uploaded file in bytes"
+    )
     infobase_id = models.SlugField(
         blank=True,
         null=True,
@@ -1090,19 +1094,28 @@ class Record(ReferralBaseModel):
     def save(self, force_insert=False, force_update=False, *args, **kwargs):
         """Overide save() to cleanse text input fields.
         """
+        # Cleanse text input fields.
         self.name = unidecode(self.name)
         if self.description:
             self.description = unidecode(self.description)
-        super().save(force_insert, force_update)
+        if self.uploaded_file:
+            try:
+                # Cache the uploaded file size.
+                self.filesize = self.uploaded_file.size
+                # If the file is a .MSG we take the sent date of the email and use it for order_date.
+                if self.extension == "MSG":
+                    # Read the file contents into a local temp file in order to parse the email message format.
+                    tmp = NamedTemporaryFile()
+                    tmp.write(self.uploaded_file.read())
+                    msg = Message(tmp.name)
+                    if msg.date:
+                        date = parse(msg.date.replace('GMT ', ''))
+                        if date and self.order_date != date:
+                            self.order_date = date
+            except AzureMissingResourceHttpError:
+                self.filesize = None
 
-        # If the file is a .MSG we take the sent date of the email and use it for order_date.
-        if self.extension == "MSG":
-            msg = Message(os.path.realpath(self.uploaded_file.path))
-            if msg.date:
-                date = parse(msg.date.replace('GMT ', ''))
-                if date and self.order_date != date:
-                    self.order_date = date
-                    self.save()
+        super().save(force_insert, force_update)
 
     @property
     def filename(self):
@@ -1124,15 +1137,11 @@ class Record(ReferralBaseModel):
 
     @property
     def filesize_str(self):
-        if self.uploaded_file and self.uploaded_file.name:
-            try:
-                num = self.uploaded_file.storage.size(self.uploaded_file.name)
-                for x in ["b", "Kb", "Mb", "Gb"]:
-                    if num < 1024.0:
-                        return "{:3.1f}{}".format(num, x)
-                    num /= 1024.0
-            except:
-                return ""
+        if self.filesize:
+            for x in ["b", "Kb", "Mb", "Gb"]:
+                if self.filesize < 1024.0:
+                    return "{:3.1f} {}".format(self.filesize, x)
+                self.filesize /= 1024.0
         else:
             return ""
 
@@ -1165,9 +1174,12 @@ class Record(ReferralBaseModel):
             d["infobase_url"] = ""
             d["infobase_id"] = ""
         if self.uploaded_file:
-            d["download_url"] = reverse("download_record", kwargs={"pk": self.pk})
+            d["download_url"] = self.uploaded_file.url
             d["filetype"] = self.extension
-            d["filesize"] = self.filesize_str
+            if self.filesize:
+                d["filesize"] = self.filesize_str
+            else:
+                d["filesize"] = ""
         else:
             d["download_url"] = ""
             d["filetype"] = ""
@@ -1223,9 +1235,12 @@ class Record(ReferralBaseModel):
             d["infobase_url"] = ""
             d["infobase_id"] = ""
         if self.uploaded_file:
-            d["download_url"] = reverse("download_record", kwargs={"pk": self.pk})
+            d["download_url"] = self.uploaded_file.url
             d["filetype"] = self.extension
-            d["filesize"] = self.filesize_str
+            if self.filesize:
+                d["filesize"] = self.filesize_str
+            else:
+                d["filesize"] = ""
         else:
             d["download_url"] = ""
             d["filetype"] = ""

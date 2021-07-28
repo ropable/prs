@@ -20,7 +20,6 @@ from django.utils.decorators import method_decorator
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View, ListView, TemplateView, FormView
-from django_downloadview import ObjectDownloadView
 import json
 import logging
 import re
@@ -1008,7 +1007,7 @@ class RecordUpload(LoginRequiredMixin, View):
             return Record.objects.get(pk=self.kwargs["pk"])
 
     def post(self, request, *args, **kargs):
-        if not "file" in request.FILES:
+        if "file" not in request.FILES:
             return HttpResponse(json.dumps({"success": False}))
         f = request.FILES["file"]
         if self.parent_referral:
@@ -1264,28 +1263,6 @@ class TaskAction(PrsObjectUpdate):
         obj.modifier = self.request.user
         obj.save()
         return super().form_valid(form)
-
-
-class ReferralDownloadView(ObjectDownloadView):
-
-    # override the file_not_found method in django-downloadview module
-    def file_not_found_response(self):
-        # check if the infobase field is set
-        pk = self.kwargs["pk"]
-        record = Record.objects.get(pk=pk)
-        if record.infobase_id:
-            infobase_url = reverse("infobase_shortcut", kwargs={"pk": pk})
-            infobase_id = record.infobase_id
-            messages.warning(
-                self.request,
-                "No file available. Try via Infobase ID <a href={}>{}</a>".format(
-                    infobase_url, infobase_id
-                ),
-            )
-        else:
-            messages.warning(self.request, "No file available.")
-
-        return redirect(reverse("record_detail", kwargs={"pk": pk}))
 
 
 class ReferralRecent(PrsObjectList):

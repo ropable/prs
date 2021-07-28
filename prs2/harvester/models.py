@@ -2,12 +2,13 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import GEOSGeometry, Polygon, Point
-from django.core.files.base import ContentFile
 from django.db import models
 import logging
 from reversion.revisions import create_revision, set_comment
+from tempfile import NamedTemporaryFile
 import xmltodict
 
+from prs2.storage import PrsAzureStorage
 from referral.models import (
     Referral, Record, Region, ReferralType, Agency, Organisation, DopTrigger,
     TaskType, Task, Location, LocalGovernment)
@@ -278,7 +279,7 @@ class EmailedReferral(models.Model):
                     )
                     try:  # NUMBER_FROM XML fields started to contain non-integer values :(
                         new_loc.address_no = int(l['NUMBER_FROM']) if l['NUMBER_FROM'] else None
-                    except:
+                    except ValueError:
                         pass  # Just ignore the value if it can't be parsed as an integer.
                     with create_revision():
                         new_loc.save()
@@ -342,8 +343,9 @@ class EmailedReferral(models.Model):
             new_record = Record.objects.create(
                 name=self.subject, referral=new_ref, order_date=datetime.today())
             file_name = 'emailed_referral_{}.html'.format(reference)
-            new_file = ContentFile(self.body)
-            new_record.uploaded_file.save(file_name, new_file)
+            new_file = NamedTemporaryFile()
+            new_file.write(self.body.encode())
+            new_record.uploaded_file.save(name=file_name, content=new_file)
             with create_revision():
                 new_record.save()
                 set_comment('Initial version.')
@@ -357,8 +359,9 @@ class EmailedReferral(models.Model):
                 new_record = Record.objects.create(
                     name=i.name, referral=new_ref, order_date=datetime.today())
                 # Duplicate the uploaded file.
-                new_file = ContentFile(i.attachment.read())
-                new_record.uploaded_file.save(i.name, new_file)
+                new_file = NamedTemporaryFile()
+                new_file.write(i.attachment.read())
+                new_record.uploaded_file.save(name=i.name, content=new_file)
                 new_record.save()
                 s = 'New PRS record generated: {}'.format(new_record)
                 logger.info(s)
@@ -382,7 +385,10 @@ class EmailAttachment(models.Model):
     emailed_referral = models.ForeignKey(EmailedReferral, on_delete=models.CASCADE)
     name = models.CharField(max_length=512)
     attachment = models.FileField(
-        max_length=255, upload_to='email_attachments/%Y/%m/%d')
+        max_length=255,
+        upload_to='email_attachments/%Y/%m/%d',
+        storage=PrsAzureStorage,
+    )
     record = models.ForeignKey(Record, null=True, blank=True, on_delete=models.SET_NULL)
 
     def __str__(self):
