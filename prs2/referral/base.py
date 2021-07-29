@@ -5,7 +5,6 @@ from django.contrib.gis.db import models
 from django.urls import reverse
 from django.db.models import FileField
 from django.utils import timezone
-import magic
 from reversion.revisions import create_revision, set_comment
 import threading
 
@@ -172,28 +171,3 @@ class ActiveModel(models.Model):
         '''
         self.effective_to = timezone.now()
         super(ActiveModel, self).save(*args, **kwargs)
-
-
-class ContentTypeRestrictedFileField(FileField):
-    """
-    Same as Django's normal FileField, but you can specify:
-    * content_types - a list containing allowed MIME types.
-        Example: ['application/pdf', 'image/jpeg']
-    """
-    default_error_messages = {
-        'filetype': 'That file type is not permitted.',
-    }
-
-    def __init__(self, content_types=None, *args, **kwargs):
-        self.content_types = content_types
-        super(ContentTypeRestrictedFileField, self).__init__(*args, **kwargs)
-
-    def to_python(self, data):
-        f = super(ContentTypeRestrictedFileField, self).to_python(data)
-        if f is None or f == '':
-            return None
-        content_type = magic.from_file(f.path, mime=True)
-        if content_type not in self.content_types:
-            raise ValidationError(self.error_messages['filetype'])
-
-        return f
