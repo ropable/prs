@@ -1,9 +1,12 @@
 from datetime import date, timedelta
 from django.conf import settings
+from django.core.files import File
 from django.db.models.base import ModelBase
 from django.db.models.query import QuerySet
 from django.test import RequestFactory
 from extract_msg import Message
+from override_storage import override_storage
+from override_storage.storage import LocMemStorage
 from pathlib import Path
 from referral.models import Referral, Task, Record
 from referral.test_models import PrsTestCase
@@ -51,6 +54,7 @@ ki aa?</i>, 'you are staying for what purpose?'. </p>
 </div>'''
 
 
+@override_storage(storage=LocMemStorage)
 class UtilsTest(PrsTestCase):
 
     def test_is_model_or_string(self):
@@ -164,10 +168,15 @@ class UtilsTest(PrsTestCase):
         record = Record.objects.all()[0]
         # Record order_date is empty.
         self.assertFalse(record.order_date)
-        tmp_f = open(settings.MEDIA_ROOT + '/test.msg', 'wb')
-        tmp_f.write(open(path, 'rb').read())
-        tmp_f.close()
-        record.uploaded_file = tmp_f.name
+        #tmp_f = open(settings.MEDIA_ROOT + '/test.msg', 'wb')
+        #tmp_f.write(open(path, 'rb').read())
+        #tmp_f.close()
+        #record.uploaded_file = tmp_f.name
+        #record.save()
+
+        new_file = File(open(path, mode='rb'), 'test_email.msg')
+        record.uploaded_file.save(new_file.name, new_file)
         record.save()
+
         # Record order_date is no longer empty.
         self.assertTrue(record.order_date)

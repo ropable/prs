@@ -3,10 +3,13 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Polygon
 from django.core import mail
+from django.core.files.base import ContentFile
 from django.urls import reverse
 from django.test import TestCase
 from mixer.backend.django import mixer
 import os
+from override_storage import override_storage
+from override_storage.storage import LocMemStorage
 from taggit.models import Tag
 
 from referral.models import (
@@ -461,8 +464,10 @@ class TaskTest(PrsTestCase):
         self.assertEqual(mail.outbox[0].subject, subject)
 
 
+@override_storage(storage=LocMemStorage)
 class RecordTest(PrsTestCase):
     """Unit tests specific to the ``Record`` model class.
+    We override the storage class for FileField fields on this model.
     """
 
     def setUp(self):
@@ -496,13 +501,12 @@ class RecordTest(PrsTestCase):
     def test_filesize_str(self):
         """Test the Record model filesize_str property.
         """
-        self.assertTrue(hasattr(self.r, 'extension'))
         self.assertFalse(self.r.filesize_str)  # No file assigned yet.
-        self.tmp_f.write('x' * 1024 * 10)  # Write 10k of junk in the file.
-        self.tmp_f.close()
-        self.r.uploaded_file = self.tmp_f.name
+        # Set the uploaded file to one with 10 Kb of content.
+        new_file = ContentFile(b'x' * 1024 * 10)
+        self.r.uploaded_file.save('content.txt', new_file)
         self.r.save()
-        self.assertEqual(self.r.filesize_str, u'10.0Kb')
+        self.assertEqual(self.r.filesize_str, '10.0 Kb')
 
     def test_as_row(self):
         """Test the Record model as_row() method.

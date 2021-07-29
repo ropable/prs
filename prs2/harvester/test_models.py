@@ -2,6 +2,8 @@ from django.core.files import File
 from django.utils import timezone
 from mixer.backend.django import mixer
 import os
+from override_storage import override_storage
+from override_storage.storage import LocMemStorage
 from referral.models import Agency, Region, DopTrigger, Referral, Task, Record
 from referral.test_models import PrsTestCase
 import sys
@@ -25,7 +27,11 @@ class RegionAssigneeModelTest(HarvesterModelTestCase):
             self.assertTrue(str(obj))
 
 
+@override_storage(storage=LocMemStorage)
 class EmailedReferralModelTest(HarvesterModelTestCase):
+    """Unit tests specific to the ``EmailedReferral`` model class.
+    We override the storage class for FileField fields on this model.
+    """
 
     def setUp(self):
         super(EmailedReferralModelTest, self).setUp()
