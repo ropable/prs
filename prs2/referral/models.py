@@ -1101,25 +1101,30 @@ class Record(ReferralBaseModel):
         if self.uploaded_file:
             try:
                 # Cache the uploaded file size.
-                self.filesize = self.uploaded_file.size
+                if hasattr(self.uploaded_file, "size"):
+                    self.filesize = self.uploaded_file.size
                 # If the file is a .MSG we take the sent date of the email and use it for order_date.
                 if self.extension == "MSG":
-                    # Read the file contents into a local temp file in order to parse the email message format.
-                    tmp = NamedTemporaryFile()
-                    tmp.write(self.uploaded_file.read())
-                    msg = Message(tmp.name)
-                    if msg.date:
-                        date = parse(msg.date.replace('GMT ', ''))
-                        if date and self.order_date != date:
-                            self.order_date = date
+                    try:  # This is optional: if email date parsing throws an exception, just ignore it.
+                        # Read the file contents into a local temp file in order to parse the email message.
+                        tmp = NamedTemporaryFile()
+                        tmp.write(self.uploaded_file.read())
+                        msg = Message(tmp.name)
+                        if msg.date:
+                            date = parse(msg.date.replace('GMT ', ''))
+                            if date and self.order_date != date:
+                                self.order_date = date
+                    except:
+                        pass
             except AzureMissingResourceHttpError:
                 self.filesize = None
 
         super().save(force_insert, force_update)
 
+
     @property
     def filename(self):
-        if self.uploaded_file and os.path.exists(self.uploaded_file.path):
+        if self.uploaded_file and self.uploaded_file.name:
             return self.uploaded_file.name.rsplit("/", 1)[-1]
         else:
             return ""
@@ -1139,7 +1144,7 @@ class Record(ReferralBaseModel):
     def filesize_str(self):
         if self.filesize:
             for x in ["b", "Kb", "Mb", "Gb"]:
-                if self.filesize < 1024.0:
+                if self.filesize <= 1024.0:
                     return "{:3.1f} {}".format(self.filesize, x)
                 self.filesize /= 1024.0
         else:
