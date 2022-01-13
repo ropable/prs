@@ -1,11 +1,11 @@
 from copy import copy
 from datetime import date
 from dateutil.parser import parse
-import json
-import os
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in
 from django.contrib.gis.db import models
+from django.contrib.gis.geos import GeometryCollection
+from django.core.exceptions import SuspiciousFileOperation
 from django.core.mail import EmailMultiAlternatives
 from django.core.validators import MaxLengthValidator
 from django.db.models import Q
@@ -14,7 +14,10 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from extract_msg import Message
 from geojson import Feature, Polygon, FeatureCollection, dumps
+import json
+import logging
 from lxml.html import clean, fromstring
+import os
 from pygeopkg.core.geopkg import GeoPackage
 from pygeopkg.core.srs import SRS
 from pygeopkg.core.field import Field
@@ -29,8 +32,10 @@ from unidecode import unidecode
 from prs2.storage import PrsAzureStorage
 from referral.base import Audit, ActiveModel
 from referral.utils import smart_truncate, dewordify_text, as_row_subtract_referral_cell
+from referral.tasks import index_object
 
 
+LOGGER = logging.getLogger("prs")
 # Australian state choices, for addresses.
 AU_STATE_CHOICES = (
     (1, "ACT"),
@@ -444,12 +449,23 @@ class Referral(ReferralBaseModel):
 
     def save(self, force_insert=False, force_update=False, *args, **kwargs):
         """Overide save to cleanse text input to the description, address fields.
+        Also set the point field value based on any assocated Location objects.
         """
         if self.description:
             self.description = unidecode(self.description)
         if self.address:
             self.address = unidecode(self.address)
+        if self.location_set.current().exists():
+            collection = GeometryCollection([l.poly for l in self.location_set.current() if l.poly])
+            self.point = collection.centroid
         super().save(force_insert, force_update)
+
+        # Index the referral.
+        try:
+            index_object.delay(pk=self.pk, model='referral')
+        except Exception as ex:
+            # Indexing failure should never block or return an exception. Log the error to stdout.
+            LOGGER.exception(f"Error during indexing referral {self}")
 
     def get_absolute_url(self):
         return reverse("referral_detail", kwargs={"pk": self.pk})
@@ -742,6 +758,13 @@ class Task(ReferralBaseModel):
             self.description = unidecode(self.description)
         super().save(force_insert, force_update)
 
+        # Index the task.
+        try:
+            index_object.delay(pk=self.pk, model='task')
+        except Exception as ex:
+            # Indexing failure should never block or return an exception. Log the error to stdout.
+            LOGGER.exception(f"Error during indexing task {self}")
+
     def as_row(self):
         """
         Returns a string of HTML that renders the object details as table row cells.
@@ -789,54 +812,51 @@ class Task(ReferralBaseModel):
         d["state"] = self.state
         return mark_safe(template.format(**d))
 
-    def as_row_actions(self, user):
+    def as_row_actions(self):
         """Returns a HTML table cell containing icons with links to suitable
         actions for the task object (e.g. stop/start, complete, etc.)
         """
-        if user.userprofile.is_prs_user():
-            d = copy(self.__dict__)
-            if self.state.name == "Stopped":
-                template = (
-                    """<td><a href="{start_url}" title="Start"><i class="fa fa-play"></i></a></td>"""
-                )
-                d["start_url"] = reverse(
-                    "task_action", kwargs={"pk": self.pk, "action": "start"}
-                )
-            elif not self.complete_date:
-                template = (
-                    """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>"""
-                )
-                template += (
-                    """ <a href="{complete_url}" title="Complete"><i class="far fa-check-circle"></i></a>"""
-                )
-                template += """
-                    <a href="{stop_url}" title="Stop"><i class="fa fa-stop"></i></a>
-                    <a href="{reassign_url}" title="Reassign"><i class="fa fa-share"></i></a>
-                    <a href="{cancel_url}" title="Cancel"><i class="fa fa-ban"></i></a>
-                    <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
-                d["edit_url"] = reverse(
-                    "task_action", kwargs={"pk": self.pk, "action": "update"}
-                )
-                d["reassign_url"] = reverse(
-                    "task_action", kwargs={"pk": self.pk, "action": "reassign"}
-                )
-                d["complete_url"] = reverse(
-                    "task_action", kwargs={"pk": self.pk, "action": "complete"}
-                )
-                d["stop_url"] = reverse(
-                    "task_action", kwargs={"pk": self.pk, "action": "stop"}
-                )
-                d["cancel_url"] = reverse(
-                    "task_action", kwargs={"pk": self.pk, "action": "cancel"}
-                )
-                d["delete_url"] = reverse(
-                    "prs_object_delete", kwargs={"pk": self.pk, "model": "task"}
-                )
-            else:
-                template = "<td></td>"
-            return mark_safe(template.format(**d))
+        d = copy(self.__dict__)
+        if self.state.name == "Stopped":
+            template = (
+                """<td><a href="{start_url}" title="Start"><i class="fa fa-play"></i></a></td>"""
+            )
+            d["start_url"] = reverse(
+                "task_action", kwargs={"pk": self.pk, "action": "start"}
+            )
+        elif not self.complete_date:
+            template = (
+                """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>"""
+            )
+            template += (
+                """ <a href="{complete_url}" title="Complete"><i class="far fa-check-circle"></i></a>"""
+            )
+            template += """
+                <a href="{stop_url}" title="Stop"><i class="fa fa-stop"></i></a>
+                <a href="{reassign_url}" title="Reassign"><i class="fa fa-share"></i></a>
+                <a href="{cancel_url}" title="Cancel"><i class="fa fa-ban"></i></a>
+                <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
+            d["edit_url"] = reverse(
+                "task_action", kwargs={"pk": self.pk, "action": "update"}
+            )
+            d["reassign_url"] = reverse(
+                "task_action", kwargs={"pk": self.pk, "action": "reassign"}
+            )
+            d["complete_url"] = reverse(
+                "task_action", kwargs={"pk": self.pk, "action": "complete"}
+            )
+            d["stop_url"] = reverse(
+                "task_action", kwargs={"pk": self.pk, "action": "stop"}
+            )
+            d["cancel_url"] = reverse(
+                "task_action", kwargs={"pk": self.pk, "action": "cancel"}
+            )
+            d["delete_url"] = reverse(
+                "prs_object_delete", kwargs={"pk": self.pk, "model": "task"}
+            )
         else:
-            return mark_safe("<td></td>")
+            template = "<td></td>"
+        return mark_safe(template.format(**d))
 
     def as_row_minus_referral(self):
         """
@@ -1089,13 +1109,12 @@ class Record(ReferralBaseModel):
     tools_template = "referral/record_tools.html"
 
     def __str__(self):
-        return smart_truncate(self.name, length=256)
+        return 'Record {} ({})'.format(self.pk, smart_truncate(self.name, length=256))
 
     def save(self, force_insert=False, force_update=False, *args, **kwargs):
         """Overide save() to cleanse text input fields.
         """
-        # Cleanse text input fields.
-        self.name = unidecode(self.name)
+        self.name = unidecode(self.name).replace('\r\n', '').strip()
         if self.description:
             self.description = unidecode(self.description)
         if self.uploaded_file:
@@ -1121,6 +1140,13 @@ class Record(ReferralBaseModel):
 
         super().save(force_insert, force_update)
 
+
+        # Index the record.
+        try:
+            index_object.delay(pk=self.pk, model='record')
+        except Exception as ex:
+            # Indexing failure should never block or return an exception. Log the error to stdout.
+            LOGGER.exception(f"Error during indexing record {self}")
 
     @property
     def filename(self):
@@ -1191,23 +1217,20 @@ class Record(ReferralBaseModel):
             d["filesize"] = ""
         return mark_safe(template.format(**d))
 
-    def as_row_actions(self, user):
+    def as_row_actions(self):
         """Returns a HTML table cell containing icons with links to suitable
         actions for the record object (edit, delete, etc.)
         """
-        if user.userprofile.is_prs_user():
-            template = """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
-                <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
-            d = copy(self.__dict__)
-            d["edit_url"] = reverse(
-                "prs_object_update", kwargs={"pk": self.pk, "model": "records"}
-            )
-            d["delete_url"] = reverse(
-                "prs_object_delete", kwargs={"pk": self.pk, "model": "records"}
-            )
-            return mark_safe(template.format(**d))
-        else:
-            return mark_safe("<td></td>")
+        template = """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
+            <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
+        d = copy(self.__dict__)
+        d["edit_url"] = reverse(
+            "prs_object_update", kwargs={"pk": self.pk, "model": "records"}
+        )
+        d["delete_url"] = reverse(
+            "prs_object_delete", kwargs={"pk": self.pk, "model": "records"}
+        )
+        return mark_safe(template.format(**d))
 
     def as_row_minus_referral(self):
         """Removes the HTML cell containing the parent referral details.
@@ -1301,6 +1324,13 @@ class Note(ReferralBaseModel):
         self.note = t.text_content().strip()
         super().save(force_insert, force_update)
 
+        # Index the note.
+        try:
+            index_object.delay(pk=self.pk, model='note')
+        except Exception as ex:
+            # Indexing failure should never block or return an exception. Log the error to stdout.
+            LOGGER.exception(f"Error during indexing note {self}")
+
     @property
     def short_note(self, x=12):
         text = unidecode(self.note)
@@ -1342,23 +1372,20 @@ class Note(ReferralBaseModel):
         d["referral"] = self.referral
         return mark_safe(template.format(**d))
 
-    def as_row_actions(self, user):
+    def as_row_actions(self):
         """Returns a HTML table cell containing icons with links to suitable
         actions for the note object (edit, delete, etc.)
         """
-        if user.userprofile.is_prs_user():
-            d = copy(self.__dict__)
-            template = """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
-                <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
-            d["edit_url"] = reverse(
-                "prs_object_update", kwargs={"pk": self.pk, "model": "notes"}
-            )
-            d["delete_url"] = reverse(
-                "prs_object_delete", kwargs={"pk": self.pk, "model": "notes"}
-            )
-            return mark_safe(template.format(**d))
-        else:
-            return mark_safe("<td></td>")
+        d = copy(self.__dict__)
+        template = """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
+            <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
+        d["edit_url"] = reverse(
+            "prs_object_update", kwargs={"pk": self.pk, "model": "notes"}
+        )
+        d["delete_url"] = reverse(
+            "prs_object_delete", kwargs={"pk": self.pk, "model": "notes"}
+        )
+        return mark_safe(template.format(**d))
 
     def as_row_minus_referral(self):
         """Removes the HTML cell containing the parent referral details.
@@ -1497,6 +1524,12 @@ class Condition(ReferralBaseModel):
             self.proposed_condition = ""
         super().save(force_insert, force_update)
 
+        # Index the condition.
+        try:
+            index_object.delay(pk=self.pk, model='condition')
+        except Exception as ex:
+            LOGGER.exception(f"Error during indexing condition {self}")
+
     def as_row(self):
         """
         Returns a string of HTML that renders the object details as table row cells.
@@ -1533,27 +1566,24 @@ class Condition(ReferralBaseModel):
         d["referral"] = self.referral or ""
         return mark_safe(template.format(**d))
 
-    def as_row_actions(self, user):
+    def as_row_actions(self):
         """Returns a HTML table cell containing icons with links to suitable
         actions for the condition object (edit, delete, etc.)
         """
-        if user.userprofile.is_prs_user():
-            template = """<td><a href="{add_clearance_url}" title="Add clearance"><i class="fa fa-plus"></i></a>
-                <a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
-                <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
-            d = copy(self.__dict__)
-            d["add_clearance_url"] = reverse(
-                "condition_clearance_add", kwargs={"pk": self.pk}
-            )
-            d["edit_url"] = reverse(
-                "prs_object_update", kwargs={"pk": self.pk, "model": "conditions"}
-            )
-            d["delete_url"] = reverse(
-                "prs_object_delete", kwargs={"pk": self.pk, "model": "conditions"}
-            )
-            return mark_safe(template.format(**d))
-        else:
-            return mark_safe("<td></td>")
+        template = """<td><a href="{add_clearance_url}" title="Add clearance"><i class="fa fa-plus"></i></a>
+            <a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
+            <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
+        d = copy(self.__dict__)
+        d["add_clearance_url"] = reverse(
+            "condition_clearance_add", kwargs={"pk": self.pk}
+        )
+        d["edit_url"] = reverse(
+            "prs_object_update", kwargs={"pk": self.pk, "model": "conditions"}
+        )
+        d["delete_url"] = reverse(
+            "prs_object_delete", kwargs={"pk": self.pk, "model": "conditions"}
+        )
+        return mark_safe(template.format(**d))
 
     def as_row_minus_referral(self):
         """
@@ -1651,6 +1681,9 @@ class Clearance(models.Model):
             self.pk, self.condition.pk, self.task.pk
         )
 
+    class Meta:
+        ordering = ["-pk"]
+
     def get_absolute_url(self):
         return reverse(
             "prs_object_detail", kwargs={"model": "clearance", "pk": self.pk}
@@ -1673,8 +1706,8 @@ class Clearance(models.Model):
         d["identifier"] = self.condition.identifier or ""
         d["condition"] = smart_truncate(self.condition.condition, length=400)
         # Condition "category" is actually an optional single tag.
-        if self.condition.tags.all():
-            d["category"] = self.condition.tags.all()[0].name
+        if self.condition.tags.exists():
+            d["category"] = self.condition.tags.first().name
         else:
             d["category"] = ""
         if self.task.description:
@@ -1819,23 +1852,20 @@ class Location(ReferralBaseModel):
         d["referral"] = self.referral
         return mark_safe(template.format(**d))
 
-    def as_row_actions(self, user):
+    def as_row_actions(self):
         """Returns a HTML table cell containing icons with links to suitable
         actions for the location object (edit, delete, etc.)
         """
-        if user.userprofile.is_prs_user():
-            template = """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
-                <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
-            d = copy(self.__dict__)
-            d["edit_url"] = reverse(
-                "prs_object_update", kwargs={"pk": self.pk, "model": "locations"}
-            )
-            d["delete_url"] = reverse(
-                "prs_object_delete", kwargs={"pk": self.pk, "model": "locations"}
-            )
-            return mark_safe(template.format(**d))
-        else:
-            return mark_safe("<td></td>")
+        template = """<td><a href="{edit_url}" title="Edit"><i class="far fa-edit"></i></a>
+            <a href="{delete_url}" title="Delete"><i class="far fa-trash-alt"></i></a></td>"""
+        d = copy(self.__dict__)
+        d["edit_url"] = reverse(
+            "prs_object_update", kwargs={"pk": self.pk, "model": "locations"}
+        )
+        d["delete_url"] = reverse(
+            "prs_object_delete", kwargs={"pk": self.pk, "model": "locations"}
+        )
+        return mark_safe(template.format(**d))
 
     def as_row_minus_referral(self):
         """Removes the HTML cell containing the parent referral details.

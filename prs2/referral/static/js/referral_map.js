@@ -1,98 +1,69 @@
 "use strict";
 
 // NOTE: the following global variables need to be set prior to loading this script:
-// * geoserver_wms_url
+// * geoserver_wmts_url
 // * geoserver_wfs_url
-// Define tile layers.
-var landgateOrthomosaic = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        layers: 'landgate:virtual_mosaic',
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        version: '1.1.1'
-    }
+// * geoserver_basic_auth
+// * geocoder_url
+
+// Define baselayer tile layers.
+const landgateOrthomosaic = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&layer=landgate:virtual_mosaic",
+  {
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
 );
-var mapboxStreets = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        layers: 'dbca:mapbox-streets',
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        version: '1.1.1'
-    }
+const mapboxStreets = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&layer=dbca:mapbox-streets",
+  {
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
 );
-var empty = L.tileLayer('');
-var cadastre = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        // Landgate-published cadastre:
-        //layers: 'landgate:LGATE-001',
-        // "PRS styled" internal version of cadastre:
-        layers: 'cddp:cadastre',
-        styles: 'cddp:cadastre.cadastre_prs',
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        transparent: true,
-        version: '1.1.1'
-    }
+const emptyBaselayer = L.tileLayer(
 );
-var slipRoads = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        layers: 'landgate:roads_slip',
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        transparent: true,
-        version: '1.1.1'
-    }
+
+// Define overlay tile layers.
+const cadastre = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&transparent=true&layer=cddp:cadastre&style=cddp:cadastre.cadastre_prs",
+  {
+    opacity: 0.85,
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
 );
-var prsLocations = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        layers: 'dbca:prs_locations',
-        opacity: 0.75,
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        transparent: true,
-        version: '1.1.1'
-    }
+const slipRoads = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&transparent=true&layer=landgate:roads_slip",
+  {
+    opacity: 0.75,
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
 );
-var dbcaTenure = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        layers: 'cddp:legislated_lands_and_waters',
-        opacity: 0.75,
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        transparent: true,
-        version: '1.1.1'
-    }
+const prsLocations = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&transparent=true&layer=dbca:prs_locations",
+  {
+    opacity: 0.75,
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
 );
-var regionalParks = L.tileLayer.wms(
-    geoserver_wms_url,
-    {
-        crs: L.CRS.EPSG4326,
-        layers: 'landgate:DBCA-026',
-        opacity: 0.75,
-        tileSize: 1024,
-        format: 'image/png',
-        tiled: true,
-        transparent: true,
-        version: '1.1.1'
-    }
+const dbcaTenure = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&transparent=true&layer=cddp:legislated_lands_and_waters",
+  {
+    opacity: 0.75,
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
+);
+const regionalParks = L.tileLayer(
+  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&transparent=true&layer=landgate:DBCA-026",
+  {
+    opacity: 0.75,
+    tileSize: 1024,
+    zoomOffset: -2,
+  },
 );
 
 // Define map.
@@ -109,7 +80,7 @@ var map = L.map('map', {
 var baseMaps = {
     "Landgate orthomosaic": landgateOrthomosaic,
     "Mapbox streets": mapboxStreets,
-    "No base layer": empty
+    "No base layer": emptyBaselayer,
 };
 var overlayMaps = {
     "Cadastre": cadastre,
@@ -125,17 +96,36 @@ L.control.layers(baseMaps, overlayMaps).addTo(map);
 // Define scale bar
 L.control.scale({maxWidth: 500, imperial: false}).addTo(map);
 
+function searchGeocoder(text, response) {
+  // Use jQuery to query the Geocoder service API.
+  return $.ajax({
+    url: geocoder_url,
+    data: {q: text},
+    dataType: 'json',
+    headers: {Authorization: 'Basic ' + geoserver_basic_auth},
+    success: function(data) {
+      response(data);
+    }
+  });
+};
+
+function filterGeocoderRecords(text, records) {
+  // The stock leaflet-search function seemed to filter out all records from the response, so we override it.
+  return records;
+};
+
 // Define geocoder search input.
 map.addControl(new L.Control.Search({
-    url: 'https://caddy.dbca.wa.gov.au/api/geocode?q={s}',
-    propertyName: 'address',
-    propertyLoc: ['lat','lon'],
-    // Other variables.
-    delayType: 1000,
-    textErr: '',
-    zoom: 17,
-    circleLocation: true,
-    autoCollapse: true
+  sourceData: searchGeocoder,
+  filterData: filterGeocoderRecords,
+  propertyName: 'address',
+  propertyLoc: ['lat','lon'],
+  // Other variables.
+  delayType: 1000,
+  textErr: '',
+  zoom: 17,
+  circleLocation: true,
+  autoCollapse: true
 }));
 
 // Define a custom lot filtering form Control
@@ -193,17 +183,24 @@ $("input#id_input_lotSearch").change(function() {
 var lotsearchresults = new L.featureGroup();
 map.addLayer(lotsearchresults);
 
+// Define WFS layer for querying.
+var cadastreWFSParams = {
+    service: 'WFS',
+    version: '2.0.0',
+    request: 'GetFeature',
+    typeName: 'cddp:cadastre',
+    outputFormat: 'application/json',
+};
+
 var findLot = function(lotname) {
+    // Generate our CQL filter.
+    var filter = "survey_lot like '%" + lotname + "%' AND BBOX(wkb_geometry," + map.getBounds().toBBoxString() + ",'EPSG:4326')";
+    var parameters = L.Util.extend(cadastreWFSParams, {'cql_filter': filter});
     $.ajax({
         url: geoserver_wfs_url,
-        data: {
-            service: "WFS",
-            version: "2.0.0",
-            request: "GetFeature",
-            typeName: "cddp:cadastre",
-            outputFormat: "application/json",
-            cql_filter: "survey_lot like '%"+lotname+"%' AND BBOX(wkb_geometry," + map.getBounds().toBBoxString() + ",'EPSG:4326')"
-        },
+        data: parameters,
+        dataType: 'json',
+        headers: {Authorization: 'Basic ' + geoserver_basic_auth},
         success: function(data) {
             if (data.totalFeatures === 0 && map.getMinZoom() < map.getZoom() && confirm("Couldn't find Survey Lot containing '" + lotname + "' in viewport, zoom out and try again?")) {
                 map.zoomOut();

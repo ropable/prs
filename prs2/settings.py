@@ -28,9 +28,13 @@ else:
 INTERNAL_IPS = ['127.0.0.1', '::1']
 ROOT_URLCONF = 'prs2.urls'
 WSGI_APPLICATION = 'prs2.wsgi.application'
-GEOSERVER_WMS_URL = env('GEOSERVER_WMS_URL', '')
+GEOSERVER_WMTS_URL = env('GEOSERVER_WMTS_URL', '')
 GEOSERVER_WFS_URL = env('GEOSERVER_WFS_URL', '')
+GEOSERVER_SSO_USER = env('GEOSERVER_SSO_USER', 'username')
+GEOSERVER_SSO_PASS = env('GEOSERVER_SSO_PASS', 'password')
+GEOCODER_URL = env('GEOCODER_URL', '')
 INSTALLED_APPS = (
+    'whitenoise.runserver_nostatic',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,15 +47,17 @@ INSTALLED_APPS = (
     'reversion',
     'crispy_forms',
     'bootstrap_pagination',
-    'tastypie',
     'webtemplate_dbca',
-    'rest_framework',
+    'django_celery_results',
     'referral',
     'reports',
     'harvester',
+    'indexer',
 )
 MIDDLEWARE = [
+    'prs2.middleware.HealthCheckMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -88,13 +94,14 @@ TEMPLATES = [
 ]
 MANAGERS = (
     ('Sean Walsh', 'sean.walsh@dbca.wa.gov.au'),
-    ('Cho Lamb', 'cho.lamb@dbca.wa.gov.au'),
+    ('Michael Roberts', 'michael.roberts@dbca.wa.gov.au'),
+    # ('Cho Lamb', 'cho.lamb@dbca.wa.gov.au'),
 )
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 APPLICATION_TITLE = 'Planning Referral System'
 APPLICATION_ACRONYM = 'PRS'
-APPLICATION_VERSION_NO = '2.5.6'
+APPLICATION_VERSION_NO = '2.5.21'
 APPLICATION_ALERTS_EMAIL = 'PRS-Alerts@dbca.wa.gov.au'
 SITE_URL = env('SITE_URL', 'localhost')
 PRS_USER_GROUP = env('PRS_USER_GROUP', 'PRS user')
@@ -121,9 +128,9 @@ ALLOWED_UPLOAD_TYPES = [
     'text/html',
     'text/plain'
 ]
+API_RESPONSE_CACHE_SECONDS = env('API_RESPONSE_CACHE_SECONDS', 60)
 
 # Email settings
-ADMINS = env('ADMIN_EMAILS', 'asi@dbca.wa.gov.au').split(',')
 EMAIL_HOST = env('EMAIL_HOST', 'email.host')
 EMAIL_PORT = env('EMAIL_PORT', 25)
 REFERRAL_EMAIL_HOST = env('REFERRAL_EMAIL_HOST', 'host')
@@ -134,6 +141,8 @@ REFERRAL_ASSIGNEE_FALLBACK = env('REFERRAL_ASSIGNEE_FALLBACK', 'admin')
 PLANNING_EMAILS = env('PLANNING_EMAILS', 'referrals@dplh.wa.gov.au').split(',')
 # Whitelist of receiving mailboxes (only harvest referrals sent to these):
 ASSESSOR_EMAILS = env('ASSESSOR_EMAILS', '').split(',')
+# Delete harvested referral emails after processing them?
+REFERRAL_EMAIL_POST_DELETE = env('REFERRAL_EMAIL_POST_DELETE', True)
 
 # Database configuration
 DATABASES = {
@@ -143,9 +152,9 @@ DATABASES = {
 
 # Internationalization
 TIME_ZONE = 'Australia/Perth'
+USE_TZ = True
 USE_I18N = False
 USE_L10N = True
-USE_TZ = True
 # Sensible AU date input formats
 DATE_INPUT_FORMATS = (
     '%d/%m/%Y',
@@ -168,6 +177,8 @@ MEDIA_URL = '/media/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = '/static/'
 STATICFILES_DIRS = (os.path.join(BASE_DIR, 'prs2', 'static'),)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+WHITENOISE_ROOT = STATIC_ROOT
 
 # Azure blob storage configuration
 AZURE_ACCOUNT_NAME = env('AZURE_ACCOUNT_NAME', '')
@@ -178,49 +189,38 @@ AZURE_EXPIRATION_SECS = env('AZURE_EXPIRATION_SECS', 3600)
 # This is required to add context variables to all templates:
 STATIC_CONTEXT_VARS = {}
 
-# Logging settings - log to stdout/stderr
+# Logging settings - log to stdout
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'console': {'format': '%(asctime)s %(name)-12s %(message)s'},
-        'verbose': {'format': '%(asctime)s %(levelname)-8s %(message)s'},
+        'verbose': {'format': '%(asctime)s %(levelname)-12s %(name)-12s %(message)s'},
     },
     'handlers': {
         'console': {
-            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'console'
+            'formatter': 'verbose',
+            'stream': sys.stdout,
+            'level': 'WARNING',
         },
         'harvester': {
-            'level': 'INFO',
             'class': 'logging.StreamHandler',
-            'formatter': 'console'
+            'formatter': 'verbose',
+            'stream': sys.stdout,
+            'level': 'INFO',
         },
     },
     'loggers': {
-        'django': {
-            'handlers': ['console'],
-            'propagate': True,
-        },
-        'django.request': {
+        '': {
             'handlers': ['console'],
             'level': 'WARNING',
-            'propagate': False,
-        },
-        'prs': {
-            'handlers': ['console'],
-            'level': 'INFO'
         },
         'harvester': {
             'handlers': ['harvester'],
-            'level': 'INFO'
+            'level': 'INFO',
         },
     }
 }
-
-# Tastypie settings
-TASTYPIE_DEFAULT_FORMATS = ['json']
 
 # crispy_forms settings
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -231,3 +231,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
     'PAGE_SIZE': 100
 }
+
+# Typesense config
+TYPESENSE_API_KEY = env('TYPESENSE_API_KEY', 'PlaceholderAPIKey')
+TYPESENSE_HOST = env('TYPESENSE_HOST', 'localhost')
+TYPESENSE_PORT = env('TYPESENSE_PORT', 8108)
+TYPESENSE_PROTOCOL = env('TYPESENSE_PROTOCOL', 'http')
+TYPESENSE_CONN_TIMEOUT = env('TYPESENSE_CONN_TIMEOUT', 2)
+
+# Celery config
+BROKER_URL = env('CELERY_BROKER_URL', 'pyamqp://localhost//')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_TIMEZONE = TIME_ZONE

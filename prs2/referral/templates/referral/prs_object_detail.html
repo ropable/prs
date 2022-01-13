@@ -3,11 +3,10 @@
 
 {% block extra_style %}
 {{ block.super }}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/css/dataTables.bootstrap4.min.css" integrity="sha256-F+DaKAClQut87heMIC6oThARMuWne8+WzxIDT7jXuPA=" crossorigin="anonymous" />
-<link rel="stylesheet" type="text/css" href="{% static 'css/prs_datatables.css' %}" />
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.1/css/dataTables.bootstrap4.min.css" integrity="sha256-lO3j+71KjtpkmNEnQHxiaYkq+hJuV1W2m9cdLgPmVv4=" crossorigin="anonymous">
 {% if geojson_locations %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mapbox.js/3.3.1/mapbox.min.css" integrity="sha256-In35bXEWybU1ap9AaTzR+Oan+5DZFnhaddUcg72dhF0=" crossorigin="anonymous" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.6.0/Control.FullScreen.css" integrity="sha256-RTALnHN76PJ32RJx2mxggy+RUt9TIRV+mfPLSLbI75A=" crossorigin="anonymous" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.css" integrity="sha512-1xoFisiGdy9nvho8EgXuXvnpR5GAMSjFwp40gSRE3NwdUdIMIKuPa7bqoUhLD0O/5tPNhteAsE5XyyMi5reQVA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.1.0/Control.FullScreen.min.css" integrity="sha512-DRkMa+fn898M1uc6s9JZeztUoXN6viuHsXmh/pgz3jG6a77YWO3U3QYEjLoqbxOeclc2NunWfMTya4Y5twXAKA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 <link rel="stylesheet" type="text/css" href="{% static 'css/leaflet-search.css' %}" />
 {% endif %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.1/min/basic.min.css" integrity="sha256-RvDmZ4ZtPtrWmZdibCa80jCE32m21xuR5SuW6zfJaW4=" crossorigin="anonymous" />
@@ -117,9 +116,8 @@
 <div class="alert alert-danger hidden" id="complete_msg">{{ can_complete_msg }}</div>
 {% endif %}
 <div id="object-details">
-
-<!-- Object details -->
-<h1>{{ page_heading }}</h1>
+    <!-- Object details -->
+    <h1>{{ page_heading }}</h1>
     <div class="row">
         <div class="col-sm-12 col-md-9">
             <table class="table table-striped table-bordered table-condensed" style="width:auto;">
@@ -138,10 +136,8 @@
             </div>
         </div>
         {% endif %}
-
     </div><!-- /.row -->
-
-</div>
+</div><!-- /#object-details -->
 <br>
 
 <!-- Object related items -->
@@ -162,6 +158,7 @@
             {% endfor %}
         </tbody>
     </table>
+</div>
 <br>
 {% endif %}
 <!-- Object related records -->
@@ -179,10 +176,11 @@
         </thead>
         <tbody>
             {% for record in related_records %}
-            <tr>{{ record.as_row }}{{ record.as_row_actions }}</tr>
+            <tr>{{ record.as_row }}{% if prs_user %}{{ record.as_row_actions }}{% else %}<td></td>{% endif %}</tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
 <br>
 {% endif %}
 <!-- Object related tasks -->
@@ -200,10 +198,11 @@
         </thead>
         <tbody>
             {% for task in related_tasks %}
-            <tr>{{ task.as_row }}{{ task.as_row_actions }}</tr>
+            <tr>{{ task.as_row }}{% if prs_user %}{{ task.as_row_actions }}{% else %}<td></td>{% endif %}</tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
 <br>
 {% endif %}
 <!-- Object related notes -->
@@ -221,10 +220,11 @@
         </thead>
         <tbody>
             {% for note in related_notes %}
-            <tr>{{ note.as_row }}{{ note.as_row_actions }}</tr>
+            <tr>{{ note.as_row }}{% if prs_user %}{{ note.as_row_actions }}{% else %}<td></td>{% endif %}</tr>
             {% endfor %}
         </tbody>
     </table>
+</div>
 <br>
 {% endif %}
 
@@ -240,15 +240,15 @@
 {% block extra_js %}
 {{ block.super }}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.1/dropzone.min.js" integrity="sha256-fegGeSK7Ez4lvniVEiz1nKMx9pYtlLwPNRPf6uc8d+8=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/js/jquery.dataTables.min.js" integrity="sha256-L4cf7m/cgC51e7BFPxQcKZcXryzSju7VYBKJLOKPHvQ=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.20/js/dataTables.bootstrap.min.js" integrity="sha256-lq/mLZPNqOQ0CHcWc0svPG23XfVdJTc4fhGCNr8lvag=" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.11.1/js/jquery.dataTables.min.js" integrity="sha256-q72JTWP/4PsIxjHXUR4O8EhjQ6VNn/U6TBlBbIqtpQ8=" crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.11.1/js/dataTables.bootstrap4.min.js" integrity="sha256-2MzaecCGkwO775PvRJkqMTd4sR6cuRiQlkT2iUeCsSU=" crossorigin="anonymous"></script>
 {% if geojson_locations %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mapbox.js/3.3.1/mapbox.js" integrity="sha256-oXEqjWuC/jlnMsEvnx5CC50C3O9dILhUsz8dIzkcbGI=" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/1.6.0/Control.FullScreen.min.js" integrity="sha256-6H5xWuqlbGtfk8UL9eMYmp14brCbCw1ZZialT8fHLRE=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.min.js" integrity="sha512-SeiQaaDh73yrb56sTW/RgVdi/mMqNeM2oBwubFHagc5BkixSpP1fvqF47mKzPGWYSSy4RwbBunrJBQ4Co8fRWA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/2.1.0/Control.FullScreen.min.js" integrity="sha512-bmFAjeYoavPgi1WB5HbKPxfN8x8namh7PVWpgxlkTRoyIldWc+UpoCZAkI9m7KXD/R2aUjtMBVmWzRh3KfPg7g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="{% static 'js/leaflet-search.min.js' %}"></script>
 <script>
     // Set global variables (needs to happen before loading referral_map.js)
-    var geoserver_wms_url = '{{ geoserver_wms_url }}';
+    var geoserver_wmts_url = '{{ geoserver_wmts_url }}';
     var geoserver_wfs_url = '{{ geoserver_wfs_url }}';
 </script>
 <script src="{% static 'js/referral_map.js' %}"></script>

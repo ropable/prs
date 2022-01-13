@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
 from django.core.mail import EmailMultiAlternatives
+from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.urls import reverse
 from django.db.models import Q, F
@@ -85,8 +86,9 @@ from referral.views_base import (
     PrsObjectHistory,
     PrsObjectTag,
 )
+from indexer.utils import typesense_client
 
-logger = logging.getLogger("prs")
+LOGGER = logging.getLogger("prs")
 
 
 class SiteHome(LoginRequiredMixin, ListView):
@@ -128,7 +130,7 @@ class SiteHome(LoginRequiredMixin, ListView):
         return context
 
 
-class HelpPage(TemplateView):
+class HelpPage(LoginRequiredMixin, TemplateView):
     """Help page (static template view).
     """
 
@@ -139,6 +141,225 @@ class HelpPage(TemplateView):
         context["page_title"] = " | ".join([settings.APPLICATION_ACRONYM, "Help"])
         links = [(reverse("site_home"), "Home"), (None, "Help")]
         context["breadcrumb_trail"] = breadcrumbs_li(links)
+        return context
+
+
+class IndexSearch(LoginRequiredMixin, TemplateView):
+    template_name = "referral/prs_index_search.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if "collection" in kwargs:
+            collection = kwargs["collection"]
+        else:
+            collection = "referrals"
+
+        context["page_title"] = " | ".join([settings.APPLICATION_ACRONYM, f"Search {collection}"])
+        context["page_heading"] = f"SEARCH {collection}".upper()
+        links = [(reverse("site_home"), "Home"), (None, f"Search {collection}")]
+        context["breadcrumb_trail"] = breadcrumbs_li(links)
+
+        # Search results
+        if "q" in self.request.GET and self.request.GET["q"]:
+            context["query_string"] = self.request.GET["q"]
+            context["search_result"] = []
+            client = typesense_client()
+            page = self.request.GET.get("page", 1)
+            search_q = {
+                'q': self.request.GET["q"],
+                'sort_by': 'created:desc',
+                'num_typos': 0,
+                'include_fields': 'id',
+                'page': page,
+                'per_page': 20,
+            }
+
+            if collection == "referrals":
+                context["result_headers"] = Referral.headers
+                search_q["query_by"] = "reference,description,address,type,referring_org,lga"
+            elif collection == "records":
+                context["result_headers"] = Record.headers
+                search_q["query_by"] = "name,description,file_name,file_content"
+            elif collection == "notes":
+                context["result_headers"] = Note.headers
+                search_q["query_by"] = "note"
+            elif collection == "tasks":
+                context["result_headers"] = Task.headers
+                search_q["query_by"] = "description,assigned_user"
+            elif collection == "conditions":
+                context["result_headers"] = Condition.headers
+                search_q["query_by"] = "proposed_condition,approved_condition"
+
+            search_result = client.collections[collection].documents.search(search_q)
+            context["search_result_count"] = search_result["found"]
+            paginator = Paginator(tuple(_ for _ in range(search_result["found"])), 20)
+            context["page_obj"] = paginator.get_page(page)
+
+            # Replace underscores in search field names with spaces.
+            for hit in search_result["hits"]:
+                highlights = []
+                for highlight in hit["highlights"]:
+                    highlight["field"] = highlight["field"].replace("_", " ")
+                    highlights.append(highlight)
+                hit["highlights"] = highlights
+
+            if collection == "referrals":
+                for hit in search_result["hits"]:
+                    context["search_result"].append({
+                        "object": Referral.objects.get(pk=hit["document"]["id"]),
+                        "highlights": hit["highlights"],
+                    })
+            elif collection == "records":
+                for hit in search_result["hits"]:
+                    context["search_result"].append({
+                        "object": Record.objects.get(pk=hit["document"]["id"]),
+                        "highlights": hit["highlights"],
+                    })
+            elif collection == "notes":
+                for hit in search_result["hits"]:
+                    context["search_result"].append({
+                        "object": Note.objects.get(pk=hit["document"]["id"]),
+                        "highlights": hit["highlights"],
+                    })
+            elif collection == "tasks":
+                for hit in search_result["hits"]:
+                    context["search_result"].append({
+                        "object": Task.objects.get(pk=hit["document"]["id"]),
+                        "highlights": hit["highlights"],
+                    })
+            elif collection == "conditions":
+                for hit in search_result["hits"]:
+                    context["search_result"].append({
+                        "object": Condition.objects.get(pk=hit["document"]["id"]),
+                        "highlights": hit["highlights"],
+                    })
+
+        return context
+
+
+class IndexSearchCombined(LoginRequiredMixin, TemplateView):
+    """A combined version of the index search which returns referrals with linked objects.
+    """
+    template_name = "referral/prs_index_search_combined.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["page_title"] = " | ".join([settings.APPLICATION_ACRONYM, "Search"])
+        context["page_heading"] = "SEARCH EVERYTHING"
+        links = [(reverse("site_home"), "Home"), (None, "Search")]
+        context["breadcrumb_trail"] = breadcrumbs_li(links)
+
+        # Search results
+        if "q" in self.request.GET and self.request.GET["q"]:
+            context["query_string"] = self.request.GET["q"]
+            context["search_result"] = []
+            context["referral_headers"] = Referral.headers
+            client = typesense_client()
+            search_q = {
+                'q': self.request.GET["q"],
+                'sort_by': 'created:desc',
+                'num_typos': 0,
+                'include_fields': 'id',
+            }
+            referrals = {}
+
+            # Referrals
+            search_q["query_by"] = "reference,description,address,type,referring_org,lga"
+            search_result = client.collections["referrals"].documents.search(search_q)
+            context["referrals_count"] = search_result["found"]
+            for hit in search_result["hits"]:
+                ref = Referral.objects.get(pk=hit["document"]["id"])
+                referrals[ref.pk] = {
+                    "referral": ref,
+                    "highlights": hit["highlights"],
+                    "records": [],
+                    "notes": [],
+                    "tasks": [],
+                    "conditions": [],
+                }
+
+            # Records
+            search_q["query_by"] = "name,description,file_name,file_content"
+            search_q["include_fields"] = "id,referral_id"
+            search_result = client.collections["records"].documents.search(search_q)
+            context["records_count"] = search_result["found"]
+            for hit in search_result["hits"]:
+                ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                if ref.pk in referrals:
+                    referrals[ref.pk]["records"].append((hit["document"]["id"], hit["highlights"][0]))
+                else:
+                    referrals[ref.pk] = {
+                        "referral": ref,
+                        "highlights": [],
+                        "records": [(hit["document"]["id"], hit["highlights"][0])],
+                        "notes": [],
+                        "tasks": [],
+                        "conditions": [],
+                    }
+
+            # Notes
+            search_q["query_by"] = "note"
+            search_q["include_fields"] = "id,referral_id"
+            search_result = client.collections["notes"].documents.search(search_q)
+            context["notes_count"] = search_result["found"]
+            for hit in search_result["hits"]:
+                ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                if ref.pk in referrals:
+                    referrals[ref.pk]["notes"].append((hit["document"]["id"], hit["highlights"][0]))
+                else:
+                    referrals[ref.pk] = {
+                        "referral": ref,
+                        "highlights": [],
+                        "records": [],
+                        "notes": [(hit["document"]["id"], hit["highlights"][0])],
+                        "tasks": [],
+                        "conditions": [],
+                    }
+
+            # Tasks
+            search_q["query_by"] = "description,assigned_user"
+            search_q["include_fields"] = "id,referral_id"
+            search_result = client.collections["tasks"].documents.search(search_q)
+            context["tasks_count"] = search_result["found"]
+            for hit in search_result["hits"]:
+                ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                if ref.pk in referrals:
+                    referrals[ref.pk]["tasks"].append((hit["document"]["id"], hit["highlights"][0]))
+                else:
+                    referrals[ref.pk] = {
+                        "referral": ref,
+                        "highlights": [],
+                        "records": [],
+                        "notes": [],
+                        "tasks": [(hit["document"]["id"], hit["highlights"][0])],
+                        "conditions": [],
+                    }
+
+            # Conditions
+            search_q["query_by"] = "proposed_condition,approved_condition"
+            search_q["include_fields"] = "id,referral_id"
+            search_result = client.collections["conditions"].documents.search(search_q)
+            context["conditions_count"] = search_result["found"]
+            for hit in search_result["hits"]:
+                ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                if ref.pk in referrals:
+                    referrals[ref.pk]["conditions"].append((hit["document"]["id"], hit["highlights"][0]))
+                else:
+                    referrals[ref.pk] = {
+                        "referral": ref,
+                        "highlights": [],
+                        "records": [],
+                        "notes": [],
+                        "tasks": [],
+                        "conditions": [(hit["document"]["id"], hit["highlights"][0])],
+                    }
+
+            # Combine the results into the template context (sort referrals by descending ID).
+            for result in sorted(referrals.items(), reverse=True):
+                context["search_result"].append(result[1])
+
         return context
 
 
@@ -379,7 +600,7 @@ class ReferralDetail(PrsObjectDetail):
                 thead = "".join(["<th>{}</th>".format(h) for h in headers])
                 rows = [
                     "<tr>{}{}</tr>".format(
-                        o.as_row_minus_referral(), o.as_row_actions(self.request.user)
+                        o.as_row_minus_referral(), o.as_row_actions()
                     )
                     for o in obj_qs
                 ]
@@ -867,10 +1088,10 @@ class LocationCreate(ReferralCreateChild):
         # to update the prs_locations layer.
         # FIXME: don't call the Borg API at present (broken).
         # resp = borgcollector_harvest(self.request)
-        # logger.info(
+        # LOGGER.info(
         #    "Borg Collector API response status was {}".format(resp.status_code)
         # )
-        # logger.info("Borg Collector API response: {}".format(resp.content))
+        # LOGGER.info("Borg Collector API response: {}".format(resp.content))
 
         # Test for intersecting locations.
         intersecting_locations = self.polygon_intersects(locations)
@@ -1497,10 +1718,10 @@ class ReferralDelete(PrsObjectDelete):
         # Call the Borg Collector publish API endpoint to create a manual job
         # to update the prs_locations layer.
         # resp = borgcollector_harvest(self.request)
-        # logger.info(
+        # LOGGER.info(
         #    "Borg Collector API response status was {}".format(resp.status_code)
         # )
-        # logger.info("Borg Collector API response: {}".format(resp.content))
+        # LOGGER.info("Borg Collector API response: {}".format(resp.content))
         return redirect("site_home")
 
 
@@ -1719,16 +1940,3 @@ class InfobaseShortcut(View):
                 request, "That record is not associated with an InfoBase object ID."
             )
             return HttpResponseRedirect(record.get_absolute_url())
-
-
-class HealthCheckView(TemplateView):
-    """A basic template view not requiring auth, used for service monitoring.
-    """
-
-    template_name = "healthcheck.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["page_title"] = "PRS application status"
-        context["status"] = "HEALTHY"
-        return context

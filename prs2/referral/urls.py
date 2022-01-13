@@ -1,5 +1,5 @@
 from django.urls import path
-from referral.models import Referral, Record, Task
+from referral.models import Referral, Task
 from referral import views
 
 
@@ -38,9 +38,11 @@ urlpatterns += [
 
 # Other static/functional URLs
 urlpatterns += [
-    path("healthcheck/", views.HealthCheckView.as_view(), name="health_check"),
     path("help/", views.HelpPage.as_view(), name="help_page"),
-    path("search/", views.GeneralSearch.as_view(), name="prs_general_search"),
+    # path("search/", views.GeneralSearch.as_view(), name="prs_general_search"),
+    path("search/", views.IndexSearchCombined.as_view(), name="prs_index_search_combined"),
+    path("index/", views.IndexSearch.as_view(), name="prs_index_search"),
+    path("index/<collection>/", views.IndexSearch.as_view(), name="prs_index_search"),
     path("stopped-tasks/", views.SiteHome.as_view(stopped_tasks=True), name="stopped_tasks_list"),
     path("print/", views.SiteHome.as_view(printable=True), name="site_home_print"),
     path("<model>/", views.PrsObjectList.as_view(), name="prs_object_list"),
