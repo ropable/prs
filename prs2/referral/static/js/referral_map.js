@@ -2,7 +2,9 @@
 
 // NOTE: the following global variables need to be set prior to loading this script:
 // * geoserver_wmts_url
+// * cddp_geoserver_wmts_url
 // * geoserver_wfs_url
+// * cddp_geoserver_wfs_url
 // * geoserver_basic_auth
 // * geocoder_url
 
@@ -21,16 +23,15 @@ const mapboxStreets = L.tileLayer(
     zoomOffset: -2,
   },
 );
-const emptyBaselayer = L.tileLayer(
-);
+const emptyBaselayer = L.tileLayer();
 
 // Define overlay tile layers.
 const cadastre = L.tileLayer(
-  geoserver_wmts_url + "?service=WMTS&request=GetTile&version=1.0.0&tilematrixset=gda94&TileMatrix=gda94:{z}&TileCol={x}&TileRow={y}&format=image/png&transparent=true&layer=cddp:cadastre&style=cddp:cadastre.cadastre_prs",
+  cddp_geoserver_wmts_url + "?layer=cddp:cpt_cadastre_scdb&style=cddp:state_cadastre_lot_no&tilematrixset=EPSG:4326&Service=WMTS&Request=GetTile&Version=1.0.0&Format=image/png&TileMatrix=EPSG:4326:{z}&TileCol={x}&TileRow={y}",
   {
     opacity: 0.85,
-    tileSize: 1024,
-    zoomOffset: -2,
+    //tileSize: 1024,
+    //zoomOffset: -2,
   },
 );
 const slipRoads = L.tileLayer(
@@ -68,7 +69,7 @@ const regionalParks = L.tileLayer(
 
 // Define map.
 var map = L.map('map', {
-    crs: L.CRS.EPSG4326,
+    crs: L.CRS.EPSG4326,  // WGS 84
     center: [-31.96, 115.87],
     zoom: 16,
     minZoom: 6,
@@ -173,7 +174,7 @@ $("input#id_input_lotSearch").change(function() {
     if (lotname) {
         // Test if the search term starts with 'LOT'; if not, append this.
         if (!lotname.startsWith('LOT')) {
-            lotname = 'LOT ' + lotname;
+          lotname = 'LOT ' + lotname;
         }
         findLot(lotname);
     }
@@ -190,19 +191,26 @@ var cadastreWFSParams = {
     request: 'GetFeature',
     typeName: 'cddp:cadastre',
     outputFormat: 'application/json',
+    //typeName: 'cddp:cpt_cadastre_scdb',
+    //outputFormat: 'text/javascript',
+    //format_options: 'callback: getJson',
 };
 
 var findLot = function(lotname) {
     // Generate our CQL filter.
     var filter = "survey_lot like '%" + lotname + "%' AND BBOX(wkb_geometry," + map.getBounds().toBBoxString() + ",'EPSG:4326')";
+    //var filter = "cad_lot_number like '%" + lotname + "%' AND BBOX(shape," + map.getBounds().toBBoxString() + ",'EPSG:4326')";
     var parameters = L.Util.extend(cadastreWFSParams, {'cql_filter': filter});
     $.ajax({
         url: geoserver_wfs_url,
         data: parameters,
-        dataType: 'json',
+        type: "GET",
         headers: {Authorization: 'Basic ' + geoserver_basic_auth},
+        dataType: "json",
+        //dataType: "jsonp",
+        //jsonpCallback: "getJson",
         success: function(data) {
-            if (data.totalFeatures === 0 && map.getMinZoom() < map.getZoom() && confirm("Couldn't find Survey Lot containing '" + lotname + "' in viewport, zoom out and try again?")) {
+            if (data.totalFeatures === 0 && map.getMinZoom() < map.getZoom() && confirm("Couldn't find Lot " + lotname + " in viewport, zoom out and try again?")) {
                 map.zoomOut();
                 findLot(lotname);
             }
