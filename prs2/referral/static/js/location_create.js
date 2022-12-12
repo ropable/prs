@@ -91,17 +91,19 @@ var queryCadastre = function(latlng) {
       dataType: "json",
       headers: {Authorization: 'Basic ' + geoserver_basic_auth},
       success: function(data) {
-        var fid = data.object_id;
-        var feature = wellknown.parse(data.boundary);
-        var location = L.geoJson(feature);
-        locationsSelected[fid] = location;
-        location.addTo(locationsLayer);
-        // Add a form fieldset containing the location data.
-        var address = addFormFieldset(data);
-        // Insert the address line as a <li> element.
-        var li = "<li><button type='button' class='btn btn-danger btn-xs removeFeature' data-feature-id='{}'>Remove</button> " + address + "</li>";
-        li = li.replace('{}', data.object_id);
-        $("ol#selected_locations").append(li);
+        if (!$.isEmptyObject(data)) {
+          var fid = data.object_id;
+          var feature = wellknown.parse(data.boundary);
+          var location = L.geoJson(feature);
+          locationsSelected[fid] = location;
+          location.addTo(locationsLayer);
+          // Add a form fieldset containing the location data.
+          var address = addFormFieldset(data);
+          // Insert the address line as a <li> element.
+          var li = "<li><button type='button' class='btn btn-danger btn-xs removeFeature' data-feature-id='{}'>Remove</button> " + address + "</li>";
+          li = li.replace('{}', data.object_id);
+          $("ol#selected_locations").append(li);
+        }
       }
     });
 }
