@@ -267,10 +267,8 @@ def query_slip_esri(pin):
     url = url + '/query'  # Add query suffix to the URL.
     auth = (env('SLIP_USERNAME', None), env('SLIP_PASSWORD', None))
     params = {
-        'f': 'json',
-        'outSR': 4326,
+        'f': 'geojson',
         'outFields': '*',
-        'returnGeometry': 'true',
         'where': 'polygon_number={}'.format(pin)
     }
     resp = requests.get(url, auth=auth, params=params)
