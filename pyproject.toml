@@ -15,7 +15,7 @@ dependencies = [
   "django-extensions==4.1",
   "django-crispy-forms==2.5",
   "crispy-bootstrap5==2025.6",
-  "django-reversion==6.0.0",
+  "django-reversion==6.1.0",
   "django-taggit==6.1.0",
   "unidecode==1.4.0",
   "pillow==12.0.0",
