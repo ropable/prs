@@ -758,14 +758,14 @@ wheels = [
 
 [[package]]
 name = "fudgeo"
-version = "1.4.2"
+version = "1.5.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bottleneck" },
     { name = "numpy" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/b0/9c44b2e4e7c1809665575435a3f0a77a5ef3d72f7b021ed2616818ace0a6/fudgeo-1.4.2-py3-none-any.whl", hash = "sha256:8d5731095f596487ed669cbf7ad3c84b41d2bae77f6a4bde66f845d65645c171", size = 55104, upload-time = "2025-12-26T11:22:57.007Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/ee/559785e91c7d2ff62f642c86b0a4a60ff584152a9a2ee9fae6f8c4272866/fudgeo-1.5.2-py3-none-any.whl", hash = "sha256:1d7761b8f4765eb28a2348760c4229d1b0d17c982f17b608e6b897f954e9a607", size = 56058, upload-time = "2026-02-08T18:25:02.724Z" },
 ]
 
 [[package]]
@@ -1394,7 +1394,7 @@ requires-dist = [
     { name = "docx2txt", specifier = "==0.9" },
     { name = "extract-msg", specifier = "==0.55.0" },
     { name = "fiona", specifier = "==1.10.1" },
-    { name = "fudgeo", specifier = "==1.4.2" },
+    { name = "fudgeo", specifier = "==1.5.2" },
     { name = "geojson", specifier = "==3.2.0" },
     { name = "gunicorn", specifier = "==25.0.2" },
     { name = "lxml", extras = ["html-clean"], specifier = "==6.0.2" },
