@@ -1,13 +1,13 @@
 [project]
 name = "prs"
-version = "2.6.8"
+version = "2.6.9"
 description = "Planning Referral System corporate application"
 authors = [{ name = "Ashley Felton", email = "ashley.felton@dbca.wa.gov.au" }]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.13,<4"
 dependencies = [
-  "django==5.2.14",
+  "django==5.2.16",
   "psycopg[binary,pool]==3.3.4",
   "dbca-utils==2.2.0",
   "python-dotenv==1.2.2",
@@ -19,7 +19,7 @@ dependencies = [
   "django-reversion==6.3.0",
   "django-taggit==6.1.0",
   "unidecode==1.4.0",
-  "pillow==12.2.0",
+  "pillow==12.3.0",
   "python-magic==0.4.27",
   "lxml[html-clean]==6.1.1",
   "xmltodict==1.0.4",
@@ -33,8 +33,8 @@ dependencies = [
   "django-celery-results==2.6.0",
   "whitenoise[brotli]==6.12.0",
   "django-crum==0.7.9",
-  "sentry-sdk[django]==2.63.0",
-  "redis==8.0.0",
+  "sentry-sdk[django]==2.66.0",
+  "redis==8.0.1",
   "xlsxwriter==3.2.9",
   "django-storages[azure]==1.14.6",
   "shapely==2.1.2",
@@ -46,12 +46,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-  "ipython>=9.14.1",
+  "ipython>=9.15.0",
   "ipdb>=0.13.13",
   "mixer>=7.2.2",
   "pre-commit>=4.6.0",
-  "coverage>=7.14.1",
-  "django-stubs>=6.0.5",
+  "coverage>=7.14.3",
+  "django-stubs>=6.0.6",
 ]
 
 [tool.ruff]
@@ -69,3 +69,8 @@ ignore = [
 # Reference: https://www.djlint.com/docs/configuration/
 [tool.djlint]
 profile = "django"
+
+[tool.pyright]
+venvPath = ".venv"
+include = ["resource_tracking", "tracking"]
+exclude = ["**/migrations", "kustomize"]
