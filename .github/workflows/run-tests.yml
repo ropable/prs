@@ -1,19 +1,30 @@
-name: 'Run unit tests'
+name: Run unit tests
 
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches:
       - main
   pull_request:
     branches:
       - main
+    paths:
+      - '**.py'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - '.github/workflows/run-tests.yml'
   workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   run_tests:
     name: Run Django Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       DATABASE_URL: postgis://postgres:postgres@localhost:5432/postgres
       LOCAL_MEDIA_STORAGE: true
@@ -32,49 +43,42 @@ jobs:
         image: rabbitmq:3-alpine
         ports:
           - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-      #----------------------------------------------
-      # Install GDAL into the environment
-      #----------------------------------------------
       - name: Install GDAL
-        id: install-gdal
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install --no-install-recommends --yes gdal-bin libgdal-dev
-      #----------------------------------------------
-      # Checkout repo
-      #----------------------------------------------
+
       - name: Checkout repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-        id: checkout-repo
         with:
           fetch-depth: 0
-      #----------------------------------------------
-      # Install & configure uv
-      #----------------------------------------------
+          persist-credentials: false
+
       - name: Install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           python-version: '3.13'
           enable-cache: true
-      #----------------------------------------------
-      # Install project dependencies
-      #----------------------------------------------
+
       - name: Install dependencies
         run: uv sync
-      #----------------------------------------------
-      # Run migrations (we need to because we have to start
-      # the celery worker before running unit tests)
-      #----------------------------------------------
+
       - name: Run DB migrations
         run: uv run python manage.py migrate
-      - name: Run celery worker for tests
+
+      - name: Run Celery worker for tests
         run: uv run celery --app prs worker --loglevel error --detach
-      #----------------------------------------------
-      # Run unit tests
-      #----------------------------------------------
+
       - name: Run tests
         run: |
+          set -euo pipefail
           uv run python manage.py collectstatic
           # NOTE: we can't run tests in parallel, because setup() may break DB constraints.
           uv run python manage.py test --noinput --failfast --verbosity 0 --settings prs.test-settings
