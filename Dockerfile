@@ -1,40 +1,56 @@
 # syntax=docker/dockerfile:1
-FROM dhi.io/python:3.13-debian13-dev
-LABEL org.opencontainers.image.authors=asi@dbca.wa.gov.au
-LABEL org.opencontainers.image.source=https://github.com/dbca-wa/prs
 
-# Install system packages required to run the project
-RUN apt-get update -y \
-  # Python package dependencies: fiona requires libgdal-dev and gcc, python-magic requires libmagic1t64
-  && apt-get install -y --no-install-recommends libgdal-dev gcc g++ gdal-bin proj-bin libmagic1t64 \
-  # Run shared library linker after installing packages
-  && ldconfig \
+# ---- Builder stage: compiliers and libraries ----
+FROM dhi.io/python:3.13-debian13-dev AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  gcc \
+  g++ \
+  libgdal-dev \
+  libmagic1t64 \
   && rm -rf /var/lib/apt/lists/*
 
-# Import uv to install dependencies
-COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/
 WORKDIR /app
-# Install project dependencies
-COPY pyproject.toml uv.lock ./
-RUN uv sync --no-group dev --link-mode=copy --compile-bytecode --no-python-downloads --frozen \
-  # Remove uv and lockfile after use
-  && rm -rf /bin/uv \
-  && rm uv.lock
-
-# Copy the remaining project files to finish building the project
-COPY gunicorn.py manage.py pyproject.toml ./
+COPY gunicorn.py manage.py pyproject.toml uv.lock ./
 COPY harvester ./harvester
 COPY indexer ./indexer
 COPY prs ./prs
 COPY referral ./referral
 COPY reports ./reports
-ENV PYTHONUNBUFFERED=1
+
+COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/
+RUN uv sync \
+  --no-group dev \
+  --link-mode=copy \
+  --compile-bytecode \
+  --no-python-downloads \
+  --frozen \
+  && rm -rf /bin/uv uv.lock
+
 ENV PATH="/app/.venv/bin:$PATH"
-# Compile scripts and collect static files
 RUN python -m compileall -q prs harvester indexer referral reports \
   && python manage.py collectstatic --noinput
 
-# Run the project as the nonroot user
+# ---- runtime stage: minimal packages needed to run the application ----
+FROM dhi.io/python:3.13-debian13-dev AS runtime
+LABEL org.opencontainers.image.authors=asi@dbca.wa.gov.au
+LABEL org.opencontainers.image.source=https://github.com/dbca-wa/prs
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  gdal-bin \
+  proj-bin \
+  libgdal36 \
+  libmagic1t64 \
+  && ldconfig \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+WORKDIR /app
+COPY --link --from=builder --chown=nonroot:nonroot /app /app
+
+ENV PYTHONUNBUFFERED=1 \
+  PYTHONDONTWRITEBYTECODE=1 \
+  PATH="/app/.venv/bin:$PATH"
+
 USER nonroot
 EXPOSE 8080
 CMD ["gunicorn", "prs.wsgi", "--config", "gunicorn.py"]
