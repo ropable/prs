@@ -3,8 +3,8 @@
   else if ('function' == typeof define && define.amd) define([], e);
   else {
     var n;
-    'undefined' != typeof window ? (n = window) : 'undefined' != typeof global ? (n = global) : 'undefined' != typeof self && (n = self),
-      (n.wellknown = e());
+    ('undefined' != typeof window ? (n = window) : 'undefined' != typeof global ? (n = global) : 'undefined' != typeof self && (n = self),
+      (n.wellknown = e()));
   }
 })(function () {
   var define, module, exports;
@@ -296,4 +296,3 @@
     [1]
   )(1);
 });
-
