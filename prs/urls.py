@@ -1,8 +1,9 @@
-from api import v3_api
 from dbca_utils.utils import env
 from django.contrib import admin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import include, path
+
+from .api import v3_api
 
 admin.autodiscover()
 
