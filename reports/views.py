@@ -5,9 +5,10 @@ from django.conf import settings
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.urls import reverse
 from django.views.generic import TemplateView
+from taggit.models import Tag
+
 from referral.models import Clearance, Referral, Task, TaskType
 from referral.utils import breadcrumbs_li, is_model_or_string, prs_user
-from taggit.models import Tag
 
 
 class ReportView(TemplateView):
@@ -16,12 +17,27 @@ class ReportView(TemplateView):
     template_name = "reports/reports.html"
 
     def get_context_data(self, **kwargs):
-        context = super(ReportView, self).get_context_data(**kwargs)
+        context = super().get_context_data(**kwargs)
         context["page_title"] = " | ".join([settings.APPLICATION_ACRONYM, "Reports"])
         links = [(reverse("site_home"), "Home"), (None, "Reports")]
         context["breadcrumb_trail"] = breadcrumbs_li(links)
         context["no_sidebar"] = True
         context["is_prs_user"] = prs_user(self.request)
+        # Define constants to pass into JavaScript via template context.
+        context["javascript_context"] = {
+            "prs_object_list_url": reverse("prs_object_list", kwargs={"model": "referrals"}),
+            "reports_download_url": reverse("reports_download"),
+            "referral_api_resource_url": reverse("api:referral_api_resource"),
+            "clearance_api_resource_url": reverse("api:clearance_api_resource"),
+            "task_api_resource_url": reverse("api:task_api_resource"),
+            "region_api_resource_url": reverse("api:region_api_resource"),
+            "referraltype_api_resource_url": reverse("api:referraltype_api_resource"),
+            "organisation_api_resource_url": reverse("api:organisation_api_resource"),
+            "taskstate_api_resource_url": reverse("api:taskstate_api_resource"),
+            "tasktype_api_resource_url": reverse("api:tasktype_api_resource"),
+            "user_api_resource_url": reverse("api:user_api_resource"),
+            "tag_api_resource_url": reverse("api:user_api_resource"),
+        }
         return context
 
 
@@ -33,7 +49,7 @@ class DownloadView(TemplateView):
         # Determine the required model type.
         if "model" in kwargs:
             self.model = is_model_or_string(kwargs.pop("model"))
-        return super(DownloadView, self).dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request):
         # Get any query parameters to filter the data.

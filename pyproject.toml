@@ -9,12 +9,12 @@ requires-python = ">=3.13,<4"
 dependencies = [
   "django==5.2.16",
   "psycopg[binary,pool]==3.3.4",
-  "dbca-utils==2.2.0",
+  "dbca-utils==3.0.13",
   "python-dotenv==1.2.2",
   "dj-database-url==3.1.2",
   "gunicorn[fast]==26.0.0",
   "django-extensions==4.1",
-  "django-crispy-forms==2.6",
+  "django-crispy-forms==2.7",
   "crispy-bootstrap5==2026.3",
   "django-reversion==6.3.0",
   "django-taggit==6.1.0",
@@ -23,7 +23,7 @@ dependencies = [
   "python-magic==0.4.27",
   "lxml[html-clean]==6.1.1",
   "xmltodict==1.0.4",
-  "extract-msg==0.55.0",
+  "extract-msg==0.56.0",
   "webtemplate-dbca==1.9.0",
   "geojson==3.3.0",
   "typesense==2.0.0",
@@ -33,25 +33,25 @@ dependencies = [
   "django-celery-results==2.6.0",
   "whitenoise[brotli]==6.12.0",
   "django-crum==0.7.9",
-  "sentry-sdk[django]==2.66.0",
-  "redis==8.0.1",
+  "sentry-sdk[django]==2.66.1",
+  "redis==8.1.0",
   "xlsxwriter==3.2.9",
   "django-storages[azure]==1.14.6",
   "shapely==2.1.2",
   "fiona==1.10.1",
   "pyproj==3.7.2",
-  "fudgeo==1.5.9",
+  "fudgeo==1.5.10",
   "django-valkey[libvalkey]==0.4.1",
 ]
 
 [dependency-groups]
 dev = [
-  "ipython>=9.15.0",
+  "ipython>=9.16.1",
   "ipdb>=0.13.13",
   "mixer>=7.2.2",
   "pre-commit>=4.6.0",
-  "coverage>=7.14.3",
-  "django-stubs>=6.0.6",
+  "coverage>=7.15.4",
+  "django-stubs>=6.0.7",
 ]
 
 [tool.ruff]
