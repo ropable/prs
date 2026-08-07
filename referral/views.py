@@ -19,6 +19,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.views.generic import FormView, ListView, TemplateView, View
 from extract_msg import Message
+from taggit.models import Tag
+
 from indexer.utils import get_typesense_client
 from referral.forms import (
     ClearanceCreateForm,
@@ -63,7 +65,6 @@ from referral.utils import (
     wfs_getfeature,
 )
 from referral.views_base import PrsObjectCreate, PrsObjectDelete, PrsObjectDetail, PrsObjectList, PrsObjectUpdate
-from taggit.models import Tag
 
 
 class SiteHome(LoginRequiredMixin, ListView):
@@ -133,7 +134,7 @@ class IndexSearch(LoginRequiredMixin, TemplateView):
         context["breadcrumb_trail"] = breadcrumbs_li(links)
 
         # Search results
-        if "q" in self.request.GET and self.request.GET["q"]:
+        if self.request.GET.get("q"):
             context["query_string"] = self.request.GET["q"]
             context["search_result"] = []
             client = get_typesense_client()
@@ -246,7 +247,7 @@ class IndexSearchCombined(LoginRequiredMixin, TemplateView):
         context["breadcrumb_trail"] = breadcrumbs_li(links)
 
         # Search results
-        if "q" in self.request.GET and self.request.GET["q"]:
+        if self.request.GET.get("q"):
             context["query_string"] = self.request.GET["q"]
             context["search_result"] = []
             context["referral_headers"] = Referral.get_headers()
@@ -968,7 +969,7 @@ class LocationCreate(ReferralCreateChild):
                     form[k] = None
             # EDGE CASE: very occasionally, address_no now contains non-numeric character.
             # If so, remove the non-numeric characters.
-            if "address_no" in form and form["address_no"]:
+            if form.get("address_no"):
                 form["address_no"] = re.sub(r"\D", "", form["address_no"])
             loc = Location(**form)
             if isinstance(poly, MultiPolygon):
