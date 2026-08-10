@@ -29,8 +29,8 @@ class Audit(models.Model):
     modifier = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s_modified", editable=False
     )
-    created = models.DateTimeField(default=timezone.now, editable=False)
-    modified = models.DateTimeField(auto_now=True, editable=False)
+    created = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
+    modified = models.DateTimeField(auto_now=True, editable=False, db_index=True)
 
     def save(self, *args, **kwargs):
         """Set the creator field to the request user on initial save. This falls back on using an admin user if a request user object is absent (i.e. the
@@ -64,7 +64,7 @@ class ActiveModel(models.Model):
     "effective_to" is used to 'delete' objects (null==not deleted).
     """
 
-    effective_to = models.DateTimeField(null=True, blank=True)
+    effective_to = models.DateTimeField(null=True, blank=True, db_index=True)
     objects = ActiveModelManager()
 
     class Meta:
