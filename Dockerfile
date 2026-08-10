@@ -3,7 +3,8 @@
 # ---- Builder stage: compiliers and libraries ----
 FROM dhi.io/python:3.13-debian13-dev AS builder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
   gcc \
   g++ \
   libgdal-dev \
@@ -18,7 +19,7 @@ COPY prs ./prs
 COPY referral ./referral
 COPY reports ./reports
 
-COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /bin/
 RUN uv sync \
   --no-group dev \
   --link-mode=copy \
@@ -41,6 +42,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   proj-bin \
   libgdal36 \
   libmagic1t64 \
+  # Run shared library linker after installing spatial packages
   && ldconfig \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
