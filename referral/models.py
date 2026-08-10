@@ -23,18 +23,18 @@ from fudgeo import Field, GeoPackage
 from fudgeo.constant import SHAPE, WGS84
 from fudgeo.enumeration import GeometryType, SQLFieldType
 from fudgeo.geometry import Polygon
-from geojson import Feature, FeatureCollection
+from geojson import Feature, FeatureCollection, dumps
 from geojson import Polygon as PolygonGeoJSON
-from geojson import dumps
-from indexer.utils import get_typesense_client
 from lxml.html import fromstring
 from lxml_html_clean import clean_html
-from referral.base import ActiveModel, Audit
-from referral.tasks import index_object, index_record
-from referral.utils import as_row_subtract_referral_cell, dewordify_text, get_srs_wgs84, search_document_normalise, smart_truncate
 from taggit.managers import TaggableManager
 from typesense.exceptions import ObjectNotFound
 from unidecode import unidecode
+
+from indexer.utils import get_typesense_client
+from referral.base import ActiveModel, Audit
+from referral.tasks import index_object, index_record
+from referral.utils import as_row_subtract_referral_cell, dewordify_text, get_srs_wgs84, search_document_normalise, smart_truncate
 
 LOGGER = logging.getLogger("prs")
 # Australian state choices, for addresses.
@@ -143,15 +143,11 @@ class Region(ReferralLookup):
 class LocalGovernment(ReferralLookup):
     """Lookup table of Local Government Authority name."""
 
-    pass
-
 
 class OrganisationType(ReferralLookup):
     """
     Lookup table for Organistion types.
     """
-
-    pass
 
 
 class Organisation(ReferralLookup):
