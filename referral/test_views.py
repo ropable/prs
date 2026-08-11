@@ -47,7 +47,7 @@ class PrsViewsTestCase(PrsTestCase):
     test_data_path = os.path.join("referral", "test_data")
 
     def setUp(self):
-        super(PrsViewsTestCase, self).setUp()
+        super().setUp()
         # Log in normaluser by default.
         self.client.login(username="normaluser", password="pass")
 
@@ -74,7 +74,7 @@ class BaseViewTest(PrsViewsTestCase):
     """Test the generic object list view."""
 
     def setUp(self):
-        super(BaseViewTest, self).setUp()
+        super().setUp()
         # Generate enough objects to paginate list views.
         mixer.cycle(25).blend(
             Referral,
@@ -184,7 +184,7 @@ class ReferralDetailTest(PrsViewsTestCase):
     """Test the referral detail view."""
 
     def setUp(self):
-        super(ReferralDetailTest, self).setUp()
+        super().setUp()
         self.ref = Referral.objects.first()
 
     def test_get(self):
@@ -253,7 +253,7 @@ class ReferralCreateTest(PrsViewsTestCase):
     """Test the customised referral create view."""
 
     def setUp(self):
-        super(ReferralCreateTest, self).setUp()
+        super().setUp()
         self.org = Organisation.objects.get(slug="wapc")
         self.task_type = TaskType.objects.get(name="Assess a referral")
         self.ref_type = ReferralType.objects.get(name="Subdivision")
@@ -318,7 +318,7 @@ class ReferralUpdateTest(PrsViewsTestCase):
     """Test the generic object update view."""
 
     def setUp(self):
-        super(ReferralUpdateTest, self).setUp()
+        super().setUp()
         self.ref = Referral.objects.first()
         self.url = reverse("prs_object_update", kwargs={"model": "referral", "pk": self.ref.pk})
 
@@ -356,7 +356,7 @@ class ReferralCreateChildTest(PrsViewsTestCase):
     """Test views related to creating child objects on a referral"""
 
     def setUp(self):
-        super(ReferralCreateChildTest, self).setUp()
+        super().setUp()
         self.ref = Referral.objects.first()
         # Ensure that conditions with 'approved' text exist on the referral.
         mixer.cycle(3).blend(
@@ -729,7 +729,7 @@ class PrsObjectTagTest(PrsViewsTestCase):
     models = [Referral, Condition]
 
     def setUp(self):
-        super(PrsObjectTagTest, self).setUp()
+        super().setUp()
         self.tag = Tag.objects.create(name="Test Tag")
 
     def test_get(self):
@@ -783,7 +783,7 @@ class PrsObjectTagTest(PrsViewsTestCase):
 
 class TagListTest(PrsViewsTestCase):
     def setUp(self):
-        super(TagListTest, self).setUp()
+        super().setUp()
         # Create a bunch of additional Tags.
         tags = (tag for tag in ["tag1", "tag2", "tag3", "tag4", "tag5"])
         for _ in range(5):
@@ -812,7 +812,7 @@ class TagListTest(PrsViewsTestCase):
 
 class ReferralTaggedTest(PrsViewsTestCase):
     def setUp(self):
-        super(ReferralTaggedTest, self).setUp()
+        super().setUp()
         self.tag = Tag.objects.create(name="Test Tag")
         # Tag one referral only.
         self.ref_tagged = Referral.objects.first()
@@ -830,7 +830,7 @@ class ReferralTaggedTest(PrsViewsTestCase):
 
 class TaskActionTest(PrsViewsTestCase):
     def setUp(self):
-        super(TaskActionTest, self).setUp()
+        super().setUp()
         self.task = Task.objects.first()
 
     def test_get_update(self):
@@ -939,7 +939,7 @@ class ReferralRelateTest(PrsViewsTestCase):
     """Test view for relating a referral to another referral"""
 
     def setUp(self):
-        super(ReferralRelateTest, self).setUp()
+        super().setUp()
         [self.ref1, self.ref2] = Referral.objects.all()[:2]
 
     def test_get(self):

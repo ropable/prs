@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.urls import reverse
+from taggit.models import Tag
+
 from referral.models import (
     Bookmark,
     Condition,
@@ -25,7 +27,6 @@ from referral.models import (
     TaskState,
     TaskType,
 )
-from taggit.models import Tag
 
 
 class OrganisationChoiceField(forms.ModelChoiceField):

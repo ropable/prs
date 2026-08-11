@@ -2,6 +2,7 @@ from datetime import date
 from tempfile import NamedTemporaryFile
 
 from django.core.files.uploadedfile import SimpleUploadedFile
+
 from referral.forms import OrganisationForm, RecordCreateForm, RecordForm, ReferralForm
 from referral.models import DopTrigger, Organisation, ReferralType, Region
 from referral.test_models import PrsTestCase
@@ -11,7 +12,7 @@ class ReferralFormTest(PrsTestCase):
     """Test ReferralForm class"""
 
     def setUp(self):
-        super(ReferralFormTest, self).setUp()
+        super().setUp()
         self.org = Organisation.objects.get(slug="wapc")
         self.ref_type = ReferralType.objects.get(name="Subdivision")
 
@@ -43,7 +44,7 @@ class ReferralFormTest(PrsTestCase):
 
 class OrganisationFormTest(PrsTestCase):
     def setUp(self):
-        super(OrganisationFormTest, self).setUp()
+        super().setUp()
         self.org = Organisation.objects.get(slug="wapc")
 
     def test_form_clean(self):

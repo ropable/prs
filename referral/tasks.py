@@ -1,6 +1,7 @@
 import logging
 
 from celery import shared_task
+
 from indexer.utils import (
     get_typesense_client,
     typesense_index_condition,

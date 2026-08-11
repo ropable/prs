@@ -9,6 +9,8 @@ from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 from mixer.backend.django import mixer
+from taggit.models import Tag
+
 from referral.models import (
     Agency,
     Bookmark,
@@ -33,7 +35,6 @@ from referral.models import (
     TaskType,
     UserProfile,
 )
-from taggit.models import Tag
 
 User = get_user_model()
 
@@ -122,7 +123,7 @@ class ReferralLookupModelTest(PrsTestCase):
     """
 
     def setUp(self):
-        super(ReferralLookupModelTest, self).setUp()
+        super().setUp()
         self.obj = DopTrigger.objects.first()
 
     def test_get_absolute_url(self):
@@ -164,7 +165,7 @@ class ReferralBaseModelTest(PrsTestCase):
     """
 
     def setUp(self):
-        super(ReferralBaseModelTest, self).setUp()
+        super().setUp()
         self.obj = Referral.objects.first()
 
     def test_get_absolute_url(self):
@@ -460,7 +461,7 @@ class TaskTest(PrsTestCase):
         t.save()
         t.email_user()
         self.assertEqual(len(mail.outbox), 1)
-        subject = "PRS task assignment notification (referral ID {0})".format(t.referral.pk)
+        subject = f"PRS task assignment notification (referral ID {t.referral.pk})"
         self.assertEqual(mail.outbox[0].subject, subject)
 
 
@@ -468,7 +469,7 @@ class RecordTest(PrsTestCase):
     """Unit tests specific to the ``Record`` model class."""
 
     def setUp(self):
-        super(RecordTest, self).setUp()
+        super().setUp()
         # Create a name temporary file within the project media directory.
         self.tmp_f = NamedTemporaryFile(mode="w", suffix=".txt", dir="media", delete=False)
         self.tmp_f.write("Hello, World!")
@@ -686,7 +687,7 @@ class ClearanceTest(PrsTestCase):
     """Unit tests specific to the ``Clearance`` model class."""
 
     def setUp(self):
-        super(ClearanceTest, self).setUp()
+        super().setUp()
         self.tag = Tag.objects.create(name="Test Tag")
 
     def test_as_row(self):
@@ -773,7 +774,7 @@ class BookmarkTest(PrsTestCase):
 
 class RelatedReferralTest(PrsTestCase):
     def setUp(self):
-        super(RelatedReferralTest, self).setUp()
+        super().setUp()
         q = Referral.objects.all().order_by("pk")
         ref1, ref2 = q[0], q[1]
         ref1.add_relationship(ref2)

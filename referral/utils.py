@@ -4,7 +4,7 @@ import re
 from datetime import date
 from io import BytesIO
 from string import punctuation
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import docx2txt
 import pyproj
@@ -33,7 +33,7 @@ from unidecode import unidecode
 LOGGER = logging.getLogger("prs")
 
 
-def is_model_or_string(model: Union[str, ModelBase]) -> Optional[ModelBase]:
+def is_model_or_string(model: str | ModelBase) -> ModelBase | None:
     """This function checks if we passed in a Model, or the name of a model as
     a case-insensitive string. The string may also be plural to some extent
     (i.e. ending with "s"). If we passed in a string, return the named Model
@@ -107,7 +107,7 @@ def dewordify_text(txt: str) -> str:
         return ""
 
 
-def breadcrumbs_li(links: List[Tuple[str, str]]) -> str:
+def breadcrumbs_li(links: list[tuple[str, str]]) -> str:
     """Returns HTML: an unordered list of URLs (no surrounding <ul> tags).
     ``links`` should be a iterable of tuples (URL, text).
     Reference: https://getbootstrap.com/docs/4.1/components/breadcrumb/
@@ -122,7 +122,7 @@ def breadcrumbs_li(links: List[Tuple[str, str]]) -> str:
     return crumbs
 
 
-def get_query(query_string: str, search_fields: List[str]) -> Optional[Q]:
+def get_query(query_string: str, search_fields: list[str]) -> Q | None:
     """Returns a query which is a combination of Q objects. That combination
     aims to search keywords within a model by testing the given search fields.
 
@@ -157,7 +157,7 @@ def as_row_subtract_referral_cell(html_row: str) -> str:
     return mark_safe(html_row)
 
 
-def filter_queryset(request: HttpRequest, model: ModelBase, queryset: Any) -> Tuple[Any, str]:
+def filter_queryset(request: HttpRequest, model: ModelBase, queryset: Any) -> tuple[Any, str]:
     """
     Function to dynamically filter a model queryset, based upon the search_fields defined in
     admin.py for that model. If search_fields is not defined, the queryset is returned unchanged.
@@ -247,12 +247,8 @@ def overdue_task_email() -> bool:
                 assigned to you within PRS are currently overdue:</p>
                 <ul>"""
             for t in ongoing_tasks:
-                text_content += "* Referral ID {} - {}\n".format(t.referral.pk, t.type.name)
-                html_content += '<li><a href="{}">Referral ID {} - {}</a></li>'.format(
-                    settings.SITE_URL + t.referral.get_absolute_url(),
-                    t.referral.pk,
-                    t.type.name,
-                )
+                text_content += f"* Referral ID {t.referral.pk} - {t.type.name}\n"
+                html_content += f'<li><a href="{settings.SITE_URL + t.referral.get_absolute_url()}">Referral ID {t.referral.pk} - {t.type.name}</a></li>'
             text_content += "This is an automatically-generated email - please do not reply.\n"
             html_content += "</ul><p>This is an automatically-generated email - please do not reply.</p>"
             msg = EmailMultiAlternatives(subject, text_content, from_email, to_email)
@@ -265,10 +261,10 @@ def overdue_task_email() -> bool:
 
 def wfs_getfeature(
     type_name: str,
-    cql_filter: Optional[str] = None,
+    cql_filter: str | None = None,
     crs: str = "EPSG:4326",
     max_features: int = 50,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """A utility function to perform a GetFeature request on a WFS endpoint
     and return results as GeoJSON.
     """
@@ -299,7 +295,7 @@ def wfs_getfeature(
     return response
 
 
-def query_geocoder(q: str) -> List[Dict[str, Any]]:
+def query_geocoder(q: str) -> list[dict[str, Any]]:
     """Utility function to proxy queries to the external geocoder service."""
     url = env("GEOCODER_URL", None)
     auth = (env("SSO_USERNAME", None), env("SSO_PASSWORD", None))
@@ -317,7 +313,7 @@ def query_geocoder(q: str) -> List[Dict[str, Any]]:
     return response
 
 
-def get_previous_pages(page_num: Any, count: int = 5) -> List[int]:
+def get_previous_pages(page_num: Any, count: int = 5) -> list[int]:
     """Convenience function to take a Paginator page object and return the previous `count`
     page numbers, to a minimum of 1.
     """
@@ -332,7 +328,7 @@ def get_previous_pages(page_num: Any, count: int = 5) -> List[int]:
     return prev_page_numbers
 
 
-def get_next_pages(page_num: Any, count: int = 5) -> List[int]:
+def get_next_pages(page_num: Any, count: int = 5) -> list[int]:
     """Convenience function to take a Paginator page object and return the next `count`
     page numbers, to a maximum of the paginator page count.
     """
@@ -346,7 +342,7 @@ def get_next_pages(page_num: Any, count: int = 5) -> List[int]:
     return next_page_numbers
 
 
-def get_uploaded_file_content(record: Any) -> Optional[str]:
+def get_uploaded_file_content(record: Any) -> str | None:
     """Convenience function that takes in a Record object and returns the uploaded file's text content (for a given set of file types)."""
     if not record.pk or not record.extension or record.extension not in ["PDF", "MSG", "DOCX", "TXT"]:
         return None
@@ -380,7 +376,6 @@ def get_uploaded_file_content(record: Any) -> Optional[str]:
             file_content = f"{message.subject} {message.body}"
         except UnicodeDecodeError:
             LOGGER.warning(f"Record {record.pk} content raised UnicodeDecodeError")
-            pass
         except:
             pass
 
@@ -641,7 +636,7 @@ def search_document_normalise(content: str) -> str:
     return content
 
 
-def parse_shapefile(uploaded_shapefile: Any) -> Union[List[Any], bool]:
+def parse_shapefile(uploaded_shapefile: Any) -> list[Any] | bool:
     """For a passed-in file object, parse it as a zipped shapefile."""
     try:
         zip_file = ZipMemoryFile(uploaded_shapefile)

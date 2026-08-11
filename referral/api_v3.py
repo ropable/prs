@@ -31,7 +31,7 @@ class ReferralTypeAPIResource(View):
         queryset = ReferralType.objects.current()
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on name.
             queryset = queryset.filter(name__icontains=self.request.GET["q"])
@@ -65,7 +65,7 @@ class RegionAPIResource(View):
         queryset = Region.objects.current()
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on name.
             queryset = queryset.filter(name__icontains=self.request.GET["q"])
@@ -97,7 +97,7 @@ class OrganisationAPIResource(View):
         queryset = Organisation.objects.current()
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on name.
             queryset = queryset.filter(name__icontains=self.request.GET["q"])
@@ -138,7 +138,7 @@ class TaskStateAPIResource(View):
         queryset = TaskState.objects.current()
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on name.
             queryset = queryset.filter(name__icontains=self.request.GET["q"])
@@ -173,7 +173,7 @@ class TaskTypeAPIResource(View):
         queryset = TaskType.objects.current()
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on name.
             queryset = queryset.filter(name__icontains=self.request.GET["q"])
@@ -210,7 +210,7 @@ class UserAPIResource(View):
         queryset = User.objects.filter(groups__in=[prs_user], is_active=True).order_by("email")
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on email.
             queryset = queryset.filter(email__icontains=self.request.GET["q"])
@@ -242,7 +242,7 @@ class TagAPIResource(View):
         queryset = Tag.objects.all().order_by("name")
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
         if "q" in self.request.GET:  # Allow basic filtering on name.
             queryset = queryset.filter(name__icontains=self.request.GET["q"])
@@ -276,33 +276,33 @@ class ReferralAPIResource(View):
         queryset = Referral.objects.current().prefetch_related("type", "regions", "referring_org", "dop_triggers", "tags", "lga")
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
-        if "region__id" in self.request.GET and self.request.GET["region__id"]:
+        if self.request.GET.get("region__id"):
             queryset = queryset.filter(regions__pk__in=[self.request.GET["region__id"]])
-        if "referring_org__id" in self.request.GET and self.request.GET["referring_org__id"]:
+        if self.request.GET.get("referring_org__id"):
             queryset = queryset.filter(referring_org__pk=self.request.GET["referring_org__id"])
-        if "type__id" in self.request.GET and self.request.GET["type__id"]:
+        if self.request.GET.get("type__id"):
             queryset = queryset.filter(type__pk=self.request.GET["type__id"])
-        if "referral_date__gte" in self.request.GET and self.request.GET["referral_date__gte"]:
+        if self.request.GET.get("referral_date__gte"):
             queryset = queryset.filter(referral_date__gte=self.request.GET["referral_date__gte"])
-        if "referral_date__lte" in self.request.GET and self.request.GET["referral_date__lte"]:
+        if self.request.GET.get("referral_date__lte"):
             queryset = queryset.filter(referral_date__lte=self.request.GET["referral_date__lte"])
-        if "tag__id" in self.request.GET and self.request.GET["tag__id"]:
+        if self.request.GET.get("tag__id"):
             queryset = queryset.filter(tags__pk__in=[self.request.GET["tag__id"]])
 
         obj_count = queryset.count()  # Count the filtered results.
 
         # Paginate the queryset.
         offset = 0
-        if "offset" in self.request.GET and self.request.GET["offset"]:
+        if self.request.GET.get("offset"):
             offset = int(self.request.GET["offset"])
             # Ignore any offset which is greater than the result count.
             if offset >= obj_count:
                 offset = 0
 
         # Django's queryset slicing is smart enough that we don't need to worry about "wrapping around".
-        if "limit" in self.request.GET and self.request.GET["limit"]:
+        if self.request.GET.get("limit"):
             limit = offset + int(self.request.GET["limit"])
         else:
             limit = offset + 50  # Default to a maximum of 50 objects in the response.
@@ -347,33 +347,33 @@ class TaskAPIResource(View):
         queryset = Task.objects.current().prefetch_related("type", "referral", "assigned_user", "state")
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
-        if "region__id" in self.request.GET and self.request.GET["region__id"]:
+        if self.request.GET.get("region__id"):
             queryset = queryset.filter(referral__regions__pk__in=[self.request.GET["region__id"]])
-        if "state__id" in self.request.GET and self.request.GET["state__id"]:
+        if self.request.GET.get("state__id"):
             queryset = queryset.filter(state__pk=self.request.GET["state__id"])
-        if "assigned_user__id" in self.request.GET and self.request.GET["assigned_user__id"]:
+        if self.request.GET.get("assigned_user__id"):
             queryset = queryset.filter(assigned_user__pk=self.request.GET["assigned_user__id"])
-        if "type__id" in self.request.GET and self.request.GET["type__id"]:
+        if self.request.GET.get("type__id"):
             queryset = queryset.filter(type__pk=self.request.GET["type__id"])
-        if "start_date__gte" in self.request.GET and self.request.GET["start_date__gte"]:
+        if self.request.GET.get("start_date__gte"):
             queryset = queryset.filter(start_date__gte=self.request.GET["start_date__gte"])
-        if "start_date__lte" in self.request.GET and self.request.GET["start_date__lte"]:
+        if self.request.GET.get("start_date__lte"):
             queryset = queryset.filter(start_date__lte=self.request.GET["start_date__lte"])
 
         obj_count = queryset.count()  # Count the filtered results.
 
         # Paginate the queryset.
         offset = 0
-        if "offset" in self.request.GET and self.request.GET["offset"]:
+        if self.request.GET.get("offset"):
             offset = int(self.request.GET["offset"])
             # Ignore any offset which is greater than the result count.
             if offset >= obj_count:
                 offset = 0
 
         # Django's queryset slicing is smart enough that we don't need to worry about "wrapping around".
-        if "limit" in self.request.GET and self.request.GET["limit"]:
+        if self.request.GET.get("limit"):
             limit = offset + int(self.request.GET["limit"])
         else:
             limit = offset + 50  # Default to a maximum of 50 objects in the response.
@@ -418,31 +418,31 @@ class ClearanceAPIResource(View):
         queryset = Clearance.objects.current().prefetch_related("task", "condition")
 
         # Queryset filtering.
-        if "pk" in kwargs and kwargs["pk"]:  # Allow filtering by object PK.
+        if kwargs.get("pk"):  # Allow filtering by object PK.
             queryset = queryset.filter(pk=kwargs["pk"])
-        if "region__id" in self.request.GET and self.request.GET["region__id"]:
+        if self.request.GET.get("region__id"):
             queryset = queryset.filter(task__referral__regions__pk__in=[self.request.GET["region__id"]])
-        if "referring_org__id" in self.request.GET and self.request.GET["referring_org__id"]:
+        if self.request.GET.get("referring_org__id"):
             queryset = queryset.filter(task__referral__referring_org__pk=self.request.GET["referring_org__id"])
-        if "state__id" in self.request.GET and self.request.GET["state__id"]:
+        if self.request.GET.get("state__id"):
             queryset = queryset.filter(task__state__pk=self.request.GET["state__id"])
-        if "start_date__gte" in self.request.GET and self.request.GET["start_date__gte"]:
+        if self.request.GET.get("start_date__gte"):
             queryset = queryset.filter(task__start_date__gte=self.request.GET["start_date__gte"])
-        if "start_date__lte" in self.request.GET and self.request.GET["start_date__lte"]:
+        if self.request.GET.get("start_date__lte"):
             queryset = queryset.filter(task__start_date__lte=self.request.GET["start_date__lte"])
 
         obj_count = queryset.count()  # Count the filtered results.
 
         # Paginate the queryset.
         offset = 0
-        if "offset" in self.request.GET and self.request.GET["offset"]:
+        if self.request.GET.get("offset"):
             offset = int(self.request.GET["offset"])
             # Ignore any offset which is greater than the result count.
             if offset >= obj_count:
                 offset = 0
 
         # Django's queryset slicing is smart enough that we don't need to worry about "wrapping around".
-        if "limit" in self.request.GET and self.request.GET["limit"]:
+        if self.request.GET.get("limit"):
             limit = offset + int(self.request.GET["limit"])
         else:
             limit = offset + 50  # Default to a maximum of 50 objects in the response.
