@@ -1,10 +1,9 @@
-# Core Django imports
 from django.contrib.gis import admin
 from django.contrib.gis.admin import ModelAdmin
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from reversion.admin import VersionAdmin
 
-# PRS project imports
 from referral.models import (
     Agency,
     Bookmark,
@@ -28,9 +27,6 @@ from referral.models import (
     TaskType,
     UserProfile,
 )
-
-# Third-party app imports
-from reversion.admin import VersionAdmin
 
 
 class AuditAdmin(VersionAdmin, ModelAdmin):

@@ -19,7 +19,9 @@ class ActiveModelManager(models.Manager):
         return self.filter(effective_to__isnull=False)
 
 
-class Audit(models.Model):
+class AuditMixin(models.Model):
+    """Model mixin class to provide fields related to auditing."""
+
     class Meta:
         abstract = True
 
@@ -29,8 +31,8 @@ class Audit(models.Model):
     modifier = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="%(app_label)s_%(class)s_modified", editable=False
     )
-    created = models.DateTimeField(default=timezone.now, editable=False)
-    modified = models.DateTimeField(auto_now=True, editable=False)
+    created = models.DateTimeField(default=timezone.now, editable=False, db_index=True)
+    modified = models.DateTimeField(auto_now=True, editable=False, db_index=True)
 
     def save(self, *args, **kwargs):
         """Set the creator field to the request user on initial save. This falls back on using an admin user if a request user object is absent (i.e. the
@@ -55,7 +57,7 @@ class Audit(models.Model):
         return reverse("admin:%s_%s_change" % opts, args=(self.pk,))
 
 
-class ActiveModel(models.Model):
+class ActiveModelMixin(models.Model):
     """
     Model mixin to allow objects to be saved as 'non-current' or 'inactive',
     instead of deleting those objects.
@@ -64,7 +66,7 @@ class ActiveModel(models.Model):
     "effective_to" is used to 'delete' objects (null==not deleted).
     """
 
-    effective_to = models.DateTimeField(null=True, blank=True)
+    effective_to = models.DateTimeField(null=True, blank=True, db_index=True)
     objects = ActiveModelManager()
 
     class Meta:

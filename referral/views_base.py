@@ -12,10 +12,11 @@ from django.shortcuts import redirect
 from django.template.defaultfilters import slugify
 from django.urls import reverse
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView, View
-from referral.forms import FORMS_MAP
-from referral.utils import breadcrumbs_li, get_next_pages, get_previous_pages, get_query, is_model_or_string, prs_user
 from reversion.models import Version
 from taggit.models import Tag
+
+from referral.forms import FORMS_MAP
+from referral.utils import breadcrumbs_li, get_next_pages, get_previous_pages, get_query, is_model_or_string, prs_user
 
 
 class PrsObjectList(LoginRequiredMixin, ListView):
@@ -43,7 +44,7 @@ class PrsObjectList(LoginRequiredMixin, ListView):
         if "effective_to" in [f.name for f in self.model._meta.get_fields()]:
             qs = qs.filter(effective_to=None)
         # Did we pass in a search string? If so, filter the queryset and return it.
-        if "q" in self.request.GET and self.request.GET["q"]:
+        if self.request.GET.get("q"):
             query_str = self.request.GET["q"]
             # Replace single-quotes with double-quotes
             query_str = query_str.replace("'", r'"')
@@ -143,7 +144,7 @@ class PrsObjectCreate(LoginRequiredMixin, CreateView):
         # Saves the form instance, sets the current object for the view,
         # and redirects to get_success_url().
         self.object = form.save(commit=False)
-        # Handle models that inherit from Audit abstract model.
+        # Handle models that inherit from AuditMixin abstract model.
         f = [field.name for field in self.model._meta.get_fields()]
         if "creator" in f and "modifier" in f:
             self.object.creator, self.object.modifier = (
