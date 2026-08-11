@@ -32,7 +32,7 @@ from typesense.exceptions import ObjectNotFound
 from unidecode import unidecode
 
 from indexer.utils import get_typesense_client
-from referral.base import ActiveModel, Audit
+from referral.base import ActiveModelMixin, AuditMixin
 from referral.tasks import index_object, index_record
 from referral.utils import as_row_subtract_referral_cell, dewordify_text, get_srs_wgs84, search_document_normalise, smart_truncate
 
@@ -50,7 +50,7 @@ AU_STATE_CHOICES = (
 )
 
 
-class ReferralLookup(ActiveModel, Audit):
+class ReferralLookup(ActiveModelMixin, AuditMixin, models.Model):
     """Abstract model type for lookup-table objects."""
 
     name = models.CharField(max_length=200)
@@ -320,7 +320,7 @@ class Agency(ReferralLookup):
         verbose_name_plural = "agencies"
 
 
-class ReferralBaseModel(ActiveModel, Audit):
+class ReferralBaseModel(ActiveModelMixin, AuditMixin, models.Model):
     """
     Base abstract model class for object types that are not lookups.
     """
@@ -1637,7 +1637,7 @@ class Condition(ReferralBaseModel):
 
 class ClearanceManager(models.Manager):
     """
-    Custom Manager for Clearance models to return current clearances in line with other models inheriting from the ActiveModel mixin.
+    Custom Manager for Clearance models to return current clearances in line with other models inheriting from ActiveModelMixin.
     """
 
     def current(self):

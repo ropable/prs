@@ -19,7 +19,7 @@ class ActiveModelManager(models.Manager):
         return self.filter(effective_to__isnull=False)
 
 
-class Audit(models.Model):
+class AuditMixin(models.Model):
     """Model mixin class to provide fields related to auditing."""
 
     class Meta:
@@ -57,7 +57,7 @@ class Audit(models.Model):
         return reverse("admin:%s_%s_change" % opts, args=(self.pk,))
 
 
-class ActiveModel(models.Model):
+class ActiveModelMixin(models.Model):
     """
     Model mixin to allow objects to be saved as 'non-current' or 'inactive',
     instead of deleting those objects.
