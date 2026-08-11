@@ -91,5 +91,5 @@ DEP003 = ["lxml_html_clean"]
 
 [tool.pyright]
 venvPath = ".venv"
-include = ["resource_tracking", "tracking"]
+include = ["harvester", "indexer", "prs", "referral", "reports"]
 exclude = ["**/migrations", "kustomize"]

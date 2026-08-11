@@ -20,6 +20,8 @@ class ActiveModelManager(models.Manager):
 
 
 class Audit(models.Model):
+    """Model mixin class to provide fields related to auditing."""
+
     class Meta:
         abstract = True
 
