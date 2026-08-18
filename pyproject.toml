@@ -1,13 +1,13 @@
 [project]
 name = "prs"
-version = "2.6.10"
+version = "2.6.11"
 description = "Planning Referral System corporate application"
 authors = [{ name = "Ashley Felton", email = "ashley.felton@dbca.wa.gov.au" }]
 license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.13,<4"
 dependencies = [
-  "django==5.2.16",
+  "django==5.2.17",
   "psycopg[binary,pool]==3.3.4",
   "dbca-utils==3.0.13",
   "python-dotenv==1.2.2",
@@ -34,7 +34,7 @@ dependencies = [
   "django-celery-results==2.6.0",
   "whitenoise[brotli]==6.12.0",
   "django-crum==0.7.9",
-  "sentry-sdk[django]==2.66.1",
+  "sentry-sdk[django]==2.67.1",
   "redis==8.1.0",
   "xlsxwriter==3.2.9",
   "django-storages[azure]==1.14.6",
@@ -52,7 +52,7 @@ dev = [
   "mixer>=7.2.2",
   "pre-commit>=4.6.1",
   "coverage>=7.15.4",
-  "django-stubs>=6.0.7",
+  "django-stubs>=6.1.0",
   "deptry>=0.25.1",
 ]
 
