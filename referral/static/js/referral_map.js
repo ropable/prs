@@ -53,7 +53,7 @@ const miningTenements = L.tileLayer(`${geoserver_wmts_url}&layer=kaartdijin-bood
 
 // Define map.
 const map = L.map('map', {
-  center: [-31.96, 115.87],
+  center: [-28.06, 117.95],
   zoom: 16,
   minZoom: 6,
   maxZoom: 18,
