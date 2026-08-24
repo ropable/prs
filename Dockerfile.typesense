@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# NOTE: when updating the Typesense base version, update the static tag in the GitHub workflow too.
 FROM typesense/typesense:30.2
 LABEL org.opencontainers.image.authors=asi@dbca.wa.gov.au
 LABEL org.opencontainers.image.source=https://github.com/dbca-wa/typesense
