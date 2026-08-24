@@ -51,12 +51,19 @@
 
     // copy model field text to proposed itext area section
     $("#id_model_condition").change(function() {
-        var selected_text = $('#id_model_condition option:selected').text()
+        const selected_model_condition_text = $('#id_model_condition option:selected').text();
         // there is a default tinymce relate ,.br tag within <p></p>, needs to be removed, else we get a blank line
         if($('#id_proposed_condition_html_ifr').contents().find('body p').contents()['length'] == 1) {
             $('#id_proposed_condition_html_ifr').contents().find('body p').remove();
         }
-        $('#id_proposed_condition_html_ifr').contents().find('body').append('<p>' + selected_text + '</p>');
+      // Append the text of the selected model condition to the proposed condition iframe body as a <p> DOM element.
+      $('<p>')
+      .text(selected_model_condition_text)
+      .appendTo(
+          $('#id_proposed_condition_html_ifr')
+          .contents()
+          .find('body')
+        );
     });
 
     // Textarea inputs (ID ends with '_html'): alter the CSS of the parent div.

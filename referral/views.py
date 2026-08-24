@@ -257,129 +257,122 @@ class IndexSearchCombined(LoginRequiredMixin, TemplateView):
                 "sort_by": "created:desc",
                 "num_typos": 0,
             }
-            referrals = {}
+            # `search_results` will be a dict of dicts, in the form {'<referral_pk>': {'referral': <Referral>, 'highlight': '<HTML snippet>', 'records': [('<pk>', '<snippet>'), ...], ...} ...}
+            search_results = {}
 
             # Referrals
             search_q["query_by"] = "reference,description,address,type,referring_org,lga"
             search_result = client.collections["referrals"].documents.search(search_q)
             context["referrals_count"] = search_result["found"]
             for hit in search_result["hits"]:
-                # Explanation for the line below: the Typesense API search response
-                # returns a list of document resources, each containing a `highlight` key
-                # that consists of a dict which contains 1+ `<field_name>` keys, each of which
-                # consists of a dict containing the text snippet and matched tokens.
-                # Earlier (<0.25) versions of the API returned `highlights` as a list instead
-                # of `highlight` as this dict.
-                # This is REALLY AWKWARD in this instance, as the highlight(s) will be
-                # for some random `field_name`. So the next line just dumps out the FIRST
-                # element in the `highlight` dict for usage below (we only need one).
-                # Very occasionally, Typesense returns a blank dictionary for `highlight`
-                # that causes a StopIteration exception (hence the try-except).
-                try:
-                    highlight = next(iter(hit["highlight"].values()))
-                    ref = Referral.objects.get(pk=hit["document"]["id"])
-                    referrals[ref.pk] = {
-                        "referral": ref,
-                        "highlight": highlight["snippet"],
-                        "records": [],
-                        "notes": [],
-                        "tasks": [],
-                        "conditions": [],
-                    }
-                except:
-                    pass
+                if hit["highlights"]:
+                    highlight = hit["highlights"][0]
+                else:
+                    highlight = None
+                ref = Referral.objects.get(pk=hit["document"]["id"])
+                search_results[ref.pk] = {
+                    "referral": ref,
+                    "highlight": highlight["snippet"] if "snippet" in highlight else None,
+                    "records": [],
+                    "notes": [],
+                    "tasks": [],
+                    "conditions": [],
+                }
 
             # Records
             search_q["query_by"] = "name,description,file_name,file_content"
             search_result = client.collections["records"].documents.search(search_q)
             context["records_count"] = search_result["found"]
             for hit in search_result["hits"]:
-                try:
-                    highlight = next(iter(hit["highlight"].values()))
-                    ref = Referral.objects.get(pk=hit["document"]["referral_id"])
-                    if ref.pk in referrals:
-                        referrals[ref.pk]["records"].append((hit["document"]["id"], highlight["snippet"]))
-                    else:
-                        referrals[ref.pk] = {
-                            "referral": ref,
-                            "highlight": {},
-                            "records": [(hit["document"]["id"], highlight["snippet"])],
-                            "notes": [],
-                            "tasks": [],
-                            "conditions": [],
-                        }
-                except:
-                    pass
+                if hit["highlights"]:
+                    highlight = hit["highlights"][0]
+                    if "referral_id" in hit["document"]:
+                        ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                        if ref.pk in search_results:
+                            search_results[ref.pk]["records"].append(
+                                (hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")
+                            )
+                        else:
+                            search_results[ref.pk] = {
+                                "referral": ref,
+                                "highlight": {},
+                                "records": [(hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")],
+                                "notes": [],
+                                "tasks": [],
+                                "conditions": [],
+                            }
 
             # Notes
             search_q["query_by"] = "note"
             search_result = client.collections["notes"].documents.search(search_q)
             context["notes_count"] = search_result["found"]
             for hit in search_result["hits"]:
-                try:
-                    highlight = next(iter(hit["highlight"].values()))
-                    ref = Referral.objects.get(pk=hit["document"]["referral_id"])
-                    if ref.pk in referrals:
-                        referrals[ref.pk]["notes"].append((hit["document"]["id"], highlight["snippet"]))
-                    else:
-                        referrals[ref.pk] = {
-                            "referral": ref,
-                            "highlight": {},
-                            "records": [],
-                            "notes": [(hit["document"]["id"], highlight["snippet"])],
-                            "tasks": [],
-                            "conditions": [],
-                        }
-                except:
-                    pass
+                if hit["highlights"]:
+                    highlight = hit["highlights"][0]
+                    if "referral_id" in hit["document"]:
+                        ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                        if ref.pk in search_results:
+                            search_results[ref.pk]["notes"].append(
+                                (hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")
+                            )
+                        else:
+                            search_results[ref.pk] = {
+                                "referral": ref,
+                                "highlight": {},
+                                "records": [],
+                                "notes": [(hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")],
+                                "tasks": [],
+                                "conditions": [],
+                            }
 
             # Tasks
             search_q["query_by"] = "description,assigned_user"
             search_result = client.collections["tasks"].documents.search(search_q)
             context["tasks_count"] = search_result["found"]
             for hit in search_result["hits"]:
-                try:
-                    highlight = next(iter(hit["highlight"].values()))
-                    ref = Referral.objects.get(pk=hit["document"]["referral_id"])
-                    if ref.pk in referrals:
-                        referrals[ref.pk]["tasks"].append((hit["document"]["id"], highlight["snippet"]))
-                    else:
-                        referrals[ref.pk] = {
-                            "referral": ref,
-                            "highlight": {},
-                            "records": [],
-                            "notes": [],
-                            "tasks": [(hit["document"]["id"], highlight["snippet"])],
-                            "conditions": [],
-                        }
-                except:
-                    pass
+                if hit["highlights"]:
+                    highlight = hit["highlights"][0]
+                    if "referral_id" in hit["document"]:
+                        ref = Referral.objects.get(pk=hit["document"]["referral_id"])
+                        if ref.pk in search_results:
+                            search_results[ref.pk]["tasks"].append(
+                                (hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")
+                            )
+                        else:
+                            search_results[ref.pk] = {
+                                "referral": ref,
+                                "highlight": {},
+                                "records": [],
+                                "notes": [],
+                                "tasks": [(hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")],
+                                "conditions": [],
+                            }
 
             # Conditions
             search_q["query_by"] = "proposed_condition,approved_condition"
             search_result = client.collections["conditions"].documents.search(search_q)
             context["conditions_count"] = search_result["found"]
             for hit in search_result["hits"]:
-                try:
+                if hit["highlights"]:
+                    highlight = hit["highlights"][0]
                     if "referral_id" in hit["document"]:
                         ref = Referral.objects.get(pk=hit["document"]["referral_id"])
-                        highlight = next(iter(hit["highlight"].values()))
-                        if ref.pk in referrals:
-                            referrals[ref.pk]["conditions"].append((hit["document"]["id"], highlight["snippet"]))
+                        if ref.pk in search_results:
+                            search_results[ref.pk]["conditions"].append(
+                                (hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")
+                            )
                         else:
-                            referrals[ref.pk] = {
+                            search_results[ref.pk] = {
                                 "referral": ref,
                                 "highlight": {},
                                 "records": [],
                                 "notes": [],
                                 "tasks": [],
-                                "conditions": [(hit["document"]["id"], highlight["snippet"])],
+                                "conditions": [(hit["document"]["id"], highlight["snippet"] if "snippet" in highlight else "")],
                             }
-                except:
-                    pass
 
-            # Combine the results into the template context (sort referrals by descending ID).
-            for result in sorted(referrals.items(), reverse=True):
+            # Combine the results into the template context (sort search results by descending referral PK).
+            for result in sorted(search_results.items(), reverse=True):
                 context["search_result"].append(result[1])
 
         return context

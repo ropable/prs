@@ -888,7 +888,7 @@ wheels = [
 
 [[package]]
 name = "extract-msg"
-version = "0.56.0"
+version = "0.56.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -899,9 +899,9 @@ dependencies = [
     { name = "rtfde" },
     { name = "tzlocal" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/eb/bf60bb8ba0c22cbefecb49248ba730b1c27a83014654a4a6e24700b8675e/extract_msg-0.56.0.tar.gz", hash = "sha256:378d57487fbb9c2f0f4559b9713f8158744cd0c7e76baec1bcc021c9f3b04c27", size = 333093, upload-time = "2026-07-18T21:13:54.165Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/aa/4a/da047195138a0ebf9876f44ab48b29c0400c137229e196f2b6e6b12de5ee/extract_msg-0.56.1.tar.gz", hash = "sha256:de94121cf5503377d932d503280293837baf630cd51ce36de901936b3172c43a", size = 333244, upload-time = "2026-08-14T03:51:58.322Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6c/2f/4217b0dfd05621d8406400d81ed7d29095cdc4994bdaa95bbbff81ab3deb/extract_msg-0.56.0-py3-none-any.whl", hash = "sha256:16adab2254cf95d7efe39c174a5ce98e3a799b25be01228f23f122ea84b8580b", size = 337625, upload-time = "2026-07-18T21:13:52.652Z" },
+    { url = "https://files.pythonhosted.org/packages/41/ee/4007423b630f583d18e653023a3c9cd0b90b0bc235482145df13d442f3a3/extract_msg-0.56.1-py3-none-any.whl", hash = "sha256:3690ee28cbc5a8affa9c07d5e902464743949fcf2033f24b926d7c08485b42a9", size = 337639, upload-time = "2026-08-14T03:51:57.054Z" },
 ]
 
 [[package]]
@@ -918,11 +918,11 @@ wheels = [
 
 [[package]]
 name = "filelock"
-version = "3.32.3"
+version = "3.32.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7d/64/a02e6765de08964ed371eca577870593245afc9dfac16d037de7c10d18e6/filelock-3.32.3.tar.gz", hash = "sha256:0ffa185a3540854c95caa7fa76b76cb219d907415e2c5dc9af25fd970563487f", size = 218135, upload-time = "2026-08-13T16:00:05.577Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/30/03b03951873a1a0ffc7e8ca0e10c15597b59e8d0e39260704cd2ea087bc4/filelock-3.32.4.tar.gz", hash = "sha256:2bde2e4cf732e0153406d8a7bc80620ecf5e621fe0d25e41143c4e3b4733ff30", size = 222126, upload-time = "2026-08-23T17:37:55.363Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/8e/50f46a9c0ce8d2861a394c1347caae037ea0431d2f67d7feb151cbc4649a/filelock-3.32.3-py3-none-any.whl", hash = "sha256:7f0ca4bcc0e181c60dbbd8aa9ab5b120ebb99e4e064e83636340056f833a1f09", size = 98901, upload-time = "2026-08-13T16:00:03.974Z" },
+    { url = "https://files.pythonhosted.org/packages/01/a4/9b63d595d748e3aff8812b65eacc1a2c4bd90b7c2012e08e72373b4835eb/filelock-3.32.4-py3-none-any.whl", hash = "sha256:22e58ca3b1ae3b98993b762d7338367ae64fe50252bf78d59da3bfebcdf1cedd", size = 99864, upload-time = "2026-08-23T17:37:53.913Z" },
 ]
 
 [[package]]
@@ -984,11 +984,11 @@ fast = [
 
 [[package]]
 name = "gunicorn-h1c"
-version = "0.6.6"
+version = "0.6.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/0f/99/8350e5fdf234620a68b96ab3cefed8049e4b2f96e360ad64f9c74a96069c/gunicorn_h1c-0.6.6.tar.gz", hash = "sha256:b704a12ee4ba94709ce95121ff063643f70358fda45389b9fd2cb95ab7783c36", size = 51209, upload-time = "2026-08-17T21:28:45.509Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/b2/36997f8a1a25c33bf429441eac7a106c5ba8a25be555fe2ea3fc76d3e8d0/gunicorn_h1c-0.6.9.tar.gz", hash = "sha256:1847ff14fe6354a0808785dbcab25c7fbf5e621a1593bc1456c2fadf018103b1", size = 58281, upload-time = "2026-08-23T14:21:15.023Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e3/c3/87cfcc2bc6597f568d318ee85497f41725eaedd3e83dd9f9ce7afbcf8cb2/gunicorn_h1c-0.6.6-cp314-cp314-macosx_26_0_arm64.whl", hash = "sha256:43d187f82f32ee43bc6484f1eda253bfa76f826c624e78c6795ba629a2940119", size = 82913, upload-time = "2026-08-17T21:28:44.207Z" },
+    { url = "https://files.pythonhosted.org/packages/64/7b/0712a8057c103026229b9b5f6752fbe63e2941e44d5885c5b2f77f0a9c7d/gunicorn_h1c-0.6.9-cp314-cp314-macosx_26_0_arm64.whl", hash = "sha256:dad8fa09f1e02e9a3739e35c324026f34322dd60f9b9ff16b822c3452273d384", size = 86319, upload-time = "2026-08-23T14:21:13.74Z" },
 ]
 
 [[package]]
@@ -1039,11 +1039,11 @@ wheels = [
 
 [[package]]
 name = "idna"
-version = "3.18"
+version = "3.19"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/cd/63/9496c57188a2ee585e0f1db071d75089a11e98aa86eb99d9d7618fc1edce/idna-3.18.tar.gz", hash = "sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848", size = 196711, upload-time = "2026-06-02T14:34:07.794Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/f7/abb373e5757eaec4b922b92f97ec8d6d7e057cf06778247604fbc4e7c3f3/idna-3.19.tar.gz", hash = "sha256:5e0811a4383b21dc5838069f801c4fb62113b7447663d2530d2bd6e77b49bf15", size = 215237, upload-time = "2026-08-18T05:14:24.27Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1e/5e/d4e9f1a599fb8e573b7b87160658329fbf28d19eac2718f51fc3def3aa5a/idna-3.18-py3-none-any.whl", hash = "sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2", size = 65455, upload-time = "2026-06-02T14:34:06.319Z" },
+    { url = "https://files.pythonhosted.org/packages/57/b0/0e52c878c53f245edd3a11020f20979b3f490f245af532c7cae3027754b5/idna-3.19-py3-none-any.whl", hash = "sha256:815e7be7a7806d54abb586dc943addc79e8b2ee16915059658cbeff4b1b43bf4", size = 68550, upload-time = "2026-08-18T05:14:22.343Z" },
 ]
 
 [[package]]
@@ -1674,7 +1674,7 @@ requires-dist = [
     { name = "django-taggit", specifier = "==6.1.0" },
     { name = "django-valkey", extras = ["libvalkey"], specifier = "==0.4.1" },
     { name = "docx2txt", specifier = "==0.9" },
-    { name = "extract-msg", specifier = "==0.56.0" },
+    { name = "extract-msg", specifier = "==0.56.1" },
     { name = "fiona", specifier = "==1.10.1" },
     { name = "fudgeo", specifier = "==1.5.10" },
     { name = "geojson", specifier = "==3.3.0" },
@@ -1688,7 +1688,7 @@ requires-dist = [
     { name = "python-magic", specifier = "==0.4.27" },
     { name = "redis", specifier = "==8.1.0" },
     { name = "requests", specifier = "==2.34.2" },
-    { name = "sentry-sdk", extras = ["django"], specifier = "==2.67.1" },
+    { name = "sentry-sdk", extras = ["django"], specifier = "==2.68.0" },
     { name = "shapely", specifier = "==2.1.2" },
     { name = "typesense", specifier = "==2.0.0" },
     { name = "unidecode", specifier = "==1.4.0" },
@@ -2025,15 +2025,15 @@ wheels = [
 
 [[package]]
 name = "sentry-sdk"
-version = "2.67.1"
+version = "2.68.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/8a/b2eec40df8a67bf073e244d29001d04ee365d163bc4f15efdfce35f53090/sentry_sdk-2.67.1.tar.gz", hash = "sha256:f263d8c9aa4137750640de8fb0ed5404df6bb564e20e4b59cb16a6eeba18d4ed", size = 990599, upload-time = "2026-08-10T13:05:55.892Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/94/23b7dd072acb9628907bd3f4fbf61794a7b12a9db8f33c1276f70ae5ac92/sentry_sdk-2.68.0.tar.gz", hash = "sha256:648c58e9887311a03470a41539e24bdbbf64a30ca4f5336f7e3dcc87276400b3", size = 1008854, upload-time = "2026-08-13T09:06:21.268Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/e2/70692eba662037cddf93391cbbf98297159f3038612e9b9a8129e16feb7a/sentry_sdk-2.67.1-py3-none-any.whl", hash = "sha256:a66bfbce1cd8a93c51c369d642ad85b46253ea7a6f7938141315b83e2823cda5", size = 515591, upload-time = "2026-08-10T13:05:54.213Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/9b/e2421d08956d0bc4691d995393d835e563886bff499d8fb10fdefae85a8d/sentry_sdk-2.68.0-py3-none-any.whl", hash = "sha256:538e56c2d03679d42f7c0cb5f1af73a7a510b00abc7e296c13ac49b107b713a4", size = 518670, upload-time = "2026-08-13T09:06:19.735Z" },
 ]
 
 [package.optional-dependencies]
