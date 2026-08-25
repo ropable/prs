@@ -16,9 +16,15 @@ spec:
       labels:
         app: prs-typesense
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
       containers:
         - name: prs-typesense
-          image: ghcr.io/dbca-wa/typesense:30.1
+          image: ghcr.io/dbca-wa/typesense:30.2
           imagePullPolicy: IfNotPresent
           env:
             - name: TZ
@@ -64,7 +70,8 @@ spec:
             failureThreshold: 3
             timeoutSeconds: 3
           securityContext:
-            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
             privileged: false
             allowPrivilegeEscalation: false
             capabilities:
