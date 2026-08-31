@@ -22,13 +22,10 @@ def index_record(pk):
     try:
         record = Record.objects.get(pk=pk)
         if not record.uploaded_file_content:
-            try:
-                record.uploaded_file_content = get_uploaded_file_content(record)
-                # Set index=False to prevent an infinite save loop.
-                record.save(index=False)
-                return f"Indexed record {pk} file content"
-            except:
-                raise
+            record.uploaded_file_content = get_uploaded_file_content(record)
+            # Set index=False to prevent an infinite save loop.
+            record.save(index=False)
+            return f"Indexed record {pk} file content"
     except Record.DoesNotExist as exc:
         raise index_record.retry(exc=exc)
     except:
