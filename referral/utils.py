@@ -376,8 +376,9 @@ def get_uploaded_file_content(record: Any) -> str | None:
             file_content = f"{message.subject} {message.body}"
         except UnicodeDecodeError:
             LOGGER.warning(f"Record {record.pk} content raised UnicodeDecodeError")
-        except:
-            pass
+            return ""  # Abort trying to read this email content.
+        except Exception as e:
+            LOGGER.warning(e)
 
     # DOCX document content.
     if record.extension == "DOCX":

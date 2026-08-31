@@ -1,3 +1,4 @@
+import logging
 import re
 from io import BytesIO
 from typing import Any
@@ -8,6 +9,8 @@ from django.conf import settings
 from extract_msg import Message
 from pdfminer import high_level
 from unidecode import unidecode
+
+LOGGER = logging.getLogger("prs")
 
 
 def get_typesense_client() -> typesense.Client:
@@ -51,7 +54,8 @@ def typesense_index_referral(ref: Any, client: typesense.Client | None = None) -
 
 
 def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> None:
-    """Index a single record in Typesense."""
+    """Index a single record in Typesense. Indexing document content can be error-prone.
+    In the event of an exception, we just catch the error and return."""
     if not client:
         client = get_typesense_client()
 
@@ -69,8 +73,6 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
     # PDF document content.
     if rec.extension == "PDF":
         try:
-            # PDF text extraction can be a little error-prone.
-            # In the event of an exception here, we'll just accept it and pass.
             if settings.LOCAL_MEDIA_STORAGE:
                 with open(rec.uploaded_file.path, "rb") as f:
                     file_content = high_level.extract_text(f)
@@ -79,8 +81,10 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 tmp = BytesIO()
                 tmp.write(rec.uploaded_file.read())
                 file_content = high_level.extract_text(tmp)
-        except:
-            pass
+        except Exception as e:
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(e)
+            return
 
     # MSG document content.
     if rec.extension == "MSG":
@@ -93,8 +97,13 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 tmp.write(rec.uploaded_file.read())
                 message = Message(tmp)
             file_content = f"{message.subject} {message.body}"
-        except:
-            pass
+        except UnicodeDecodeError:
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised a UnicodeDecodeError")
+            return
+        except Exception as e:
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(e)
+            return
 
     # DOCX document content.
     if rec.extension == "DOCX":
@@ -106,8 +115,10 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 tmp = BytesIO()
                 tmp.write(rec.uploaded_file.read())
                 file_content = docx2txt.process(tmp)
-        except:
-            pass
+        except Exception as e:
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(e)
+            return
 
     # TXT document content.
     if rec.extension == "TXT":
@@ -118,8 +129,10 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
             else:
                 # Read the upload blob content directly.
                 file_content = rec.uploaded_file.read()
-        except:
-            pass
+        except Exception as e:
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(e)
+            return
 
     # Trim down the file content a little to aid indexing.
     if file_content:

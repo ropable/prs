@@ -12,7 +12,7 @@ dependencies = [
   "dbca-utils==3.0.13",
   "python-dotenv==1.2.3",
   "dj-database-url==3.1.2",
-  "gunicorn[fast]==26.0.0",
+  "gunicorn[fast]==26.1.0",
   "django-extensions==4.1",
   "django-crispy-forms==2.7",
   "crispy-bootstrap5==2026.3",
@@ -22,7 +22,7 @@ dependencies = [
   "unidecode==1.4.0",
   "pillow==12.3.0",
   "python-magic==0.4.27",
-  "lxml[html-clean]==6.1.1",
+  "lxml[html-clean]==6.1.2",
   "xmltodict==1.0.4",
   "extract-msg==0.56.1",
   "webtemplate-dbca==1.9.0",
@@ -63,9 +63,10 @@ extend-exclude = ["migrations"]
 
 [tool.ruff.lint]
 ignore = [
-  "E265", # Block comment should start with #
-  "E501", # Line too long
-  "E722", # Bare except
+  "E265",   # Block comment should start with #
+  "E501",   # Line too long
+  "E722",   # Bare except
+  "BLE001", # Blind except: https://docs.astral.sh/ruff/rules/blind-except/
 ]
 
 # Reference: https://www.djlint.com/docs/configuration/
