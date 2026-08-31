@@ -82,7 +82,7 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 tmp.write(rec.uploaded_file.read())
                 file_content = high_level.extract_text(tmp)
         except Exception as e:
-            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception parsing PDF content")
             LOGGER.warning(e)
             return
 
@@ -98,10 +98,10 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 message = Message(tmp)
             file_content = f"{message.subject} {message.body}"
         except UnicodeDecodeError:
-            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised a UnicodeDecodeError")
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised a UnicodeDecodeError for MSG")
             return
         except Exception as e:
-            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception parsing MSG content")
             LOGGER.warning(e)
             return
 
@@ -116,7 +116,7 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 tmp.write(rec.uploaded_file.read())
                 file_content = docx2txt.process(tmp)
         except Exception as e:
-            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception parsing DOCX content")
             LOGGER.warning(e)
             return
 
@@ -130,7 +130,7 @@ def typesense_index_record(rec: Any, client: typesense.Client | None = None) -> 
                 # Read the upload blob content directly.
                 file_content = rec.uploaded_file.read()
         except Exception as e:
-            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception")
+            LOGGER.warning(f"typesense_index_record (record {rec.pk}) content raised an exception parsing TXT content")
             LOGGER.warning(e)
             return
 
