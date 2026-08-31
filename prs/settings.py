@@ -263,6 +263,11 @@ LOGGING = {
             "style": "{",
         },
     },
+    "filters": {
+        "suppress_extract_msg_body_error": {
+            "()": "referral.logging_filters.SuppressExtractMsgBodyError",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
@@ -291,6 +296,12 @@ LOGGING = {
         "azure": {
             "handlers": ["console"],
             "level": "ERROR",
+        },
+        # Suppress extract_msg's noisy ERROR log for MSG files with unreadable bodies.
+        # The application catches the resulting exception and logs a WARNING instead.
+        "extract_msg": {
+            "level": "ERROR",
+            "filters": ["suppress_extract_msg_body_error"],
         },
     },
 }
