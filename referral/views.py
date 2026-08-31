@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from copy import copy
 from datetime import date, datetime, timedelta
@@ -65,6 +66,8 @@ from referral.utils import (
     wfs_getfeature,
 )
 from referral.views_base import PrsObjectCreate, PrsObjectDelete, PrsObjectDetail, PrsObjectList, PrsObjectUpdate
+
+LOGGER = logging.getLogger("prs")
 
 
 class SiteHome(LoginRequiredMixin, ListView):
@@ -1232,9 +1235,12 @@ class RecordUpload(LoginRequiredMixin, View):
 
             # *.msg files only: set order_date to the sent date of the uploaded email message.
             if new_record.extension == "MSG":
-                msg = Message(new_record.uploaded_file)
-                if msg.date:
-                    new_record.order_date = msg.date
+                try:
+                    msg = Message(new_record.uploaded_file)
+                    if msg.date:
+                        new_record.order_date = msg.date
+                except Exception as exc:
+                    LOGGER.warning(f"Could not read MSG sent date: {exc}")
 
             new_record.save()
             messages.success(self.request, f"Upload processed and saved as {new_record}")
@@ -1252,9 +1258,12 @@ class RecordUpload(LoginRequiredMixin, View):
 
             # *.msg files only: set order_date to the sent date of the uploaded email message.
             if record.extension == "MSG":
-                msg = Message(record.uploaded_file)
-                if msg.date:
-                    record.order_date = msg.date
+                try:
+                    msg = Message(record.uploaded_file)
+                    if msg.date:
+                        record.order_date = msg.date
+                except Exception as exc:
+                    LOGGER.warning(f"Could not read MSG sent date: {exc}")
 
             record.save()
             messages.success(self.request, f"Upload processed and saved to {record}")

@@ -1110,9 +1110,12 @@ class Record(ReferralBaseModel):
 
         # If the file is a .MSG we take the sent date of the email and use it for order_date.
         if self.extension == "MSG":
-            msg = Message(self.uploaded_file)
-            if msg.date and not self.order_date:  # Don't override any existing order_date.
-                self.order_date = msg.date
+            try:
+                msg = Message(self.uploaded_file)
+                if msg.date and not self.order_date:  # Don't override any existing order_date.
+                    self.order_date = msg.date
+            except Exception as exc:
+                LOGGER.warning(f"Record {self.pk} could not read MSG sent date: {exc}")
 
         self.search_document = f"{self.name} {self.infobase_id or ''} {self.uploaded_file_content or ''} {self.description or ''}"
         self.search_document = search_document_normalise(self.search_document)
