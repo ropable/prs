@@ -63,9 +63,10 @@ extend-exclude = ["migrations"]
 
 [tool.ruff.lint]
 ignore = [
-  "E265", # Block comment should start with #
-  "E501", # Line too long
-  "E722", # Bare except
+  "E265",   # Block comment should start with #
+  "E501",   # Line too long
+  "E722",   # Bare except
+  "BLE001", # Blind except: https://docs.astral.sh/ruff/rules/blind-except/
 ]
 
 # Reference: https://www.djlint.com/docs/configuration/
