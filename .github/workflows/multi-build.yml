@@ -21,6 +21,7 @@ concurrency:
 
 env:
   GHCR_IMAGE: ghcr.io/${{ github.repository }}
+  REGISTRY: ghcr.io/${{ github.repository_owner }}
 
 jobs:
   build:
@@ -75,7 +76,7 @@ jobs:
 
       - name: Build and push with Docker Buildx
         id: bake
-        uses: docker/bake-action@v7
+        uses: docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7.3.0
         with:
           push: true
           targets: all
