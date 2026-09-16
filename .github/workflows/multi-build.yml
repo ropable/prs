@@ -69,9 +69,15 @@ jobs:
           set -euo pipefail
           tag="$(git tag --points-at HEAD | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1 || true)"
           if [ -n "$tag" ]; then
-            echo "value=${tag}" >> "$GITHUB_OUTPUT"
+            # strip a leading 'v' (e.g. v1.2.3 -> 1.2.3)
+            semtag="${tag#v}"
+            echo "value=${semtag}" >> "$GITHUB_OUTPUT"
+            echo "tags=${GHCR_IMAGE}:latest,${GHCR_IMAGE}:${semtag}" >> "$GITHUB_OUTPUT"
+            echo "has_version_tag=true" >> "$GITHUB_OUTPUT"
           else
             echo "value=latest" >> "$GITHUB_OUTPUT"
+            echo "tags=${GHCR_IMAGE}:latest" >> "$GITHUB_OUTPUT"
+            echo "has_version_tag=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build and push with Docker Buildx
@@ -81,7 +87,8 @@ jobs:
           push: true
           targets: all
           set: |
-            app.tags=${{ env.GHCR_IMAGE }}:${{ steps.image_tag.outputs.value }}
+            app.tags=${{ env.GHCR_IMAGE }}:latest
+            ${{ steps.image_tag.outputs.has_version_tag == 'true' && format('app.tags={0}:{1}', env.GHCR_IMAGE, steps.image_tag.outputs.value) || '' }}
 
   scan:
     name: Docker image vulnerability scan
