@@ -49,3 +49,10 @@ target "typesense" {
   cache-to   = ["type=gha,mode=max"]
   attest     = ["type=provenance,mode=max", "type=sbom"]
 }
+
+target "local" {
+  inherits  = ["app"]
+  platforms = ["linux/amd64"]
+  attest    = ["type=provenance,disabled=true", "type=sbom,disabled=true"]
+  output    = ["type=docker"]
+}
