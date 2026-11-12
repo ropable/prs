@@ -9,15 +9,27 @@ FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 FROM dhi.io/python:${PYTHON_VERSION} AS builder
 
 # ---- Builder stage ----
-# gcc is required: gunicorn[fast] -> gunicorn-h1c has no wheel for every
-# platform and builds its extension from source.
 COPY --link --from=uv /uv /usr/local/bin/uv
 
 WORKDIR /app
 
+# Compilers and GDAL headers are needed only to build two dependencies from
+# source. Neither is copied into the runtime image, which keeps only the
+# runtime libs (see the runtime stage).
+#   * gunicorn-h1c (gunicorn[fast]) publishes no cp313 wheel on any platform, so
+#     its C extension is always compiled from the sdist -> gcc.
+#   * fiona 1.10.1 publishes no linux/aarch64 cp313 wheel (amd64 uses the
+#     manylinux wheel), so the linux/arm64 tier builds it from the sdist. That
+#     build needs gdal-config from libgdal-dev and a C++ compiler for its
+#     fiona._transform extension -> g++.
+# A source-built fiona links the system libgdal.so.36 rather than a bundled
+# copy, which the runtime stage already provides.
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
-  apt-get update && apt-get install -y --no-install-recommends gcc
+  apt-get update && apt-get install -y --no-install-recommends \
+  gcc \
+  g++ \
+  libgdal-dev
 
 # Install only runtime dependencies into /app/.venv. The venv path must match
 # the runtime stage: uv writes absolute shebangs into console scripts such as
@@ -28,7 +40,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
   uv sync --locked --no-group dev --link-mode=copy --compile-bytecode --no-python-downloads --no-install-project
 
 # ---- runtime stage: minimal packages needed to run the application ----
-# NOTE: the runtime stage requires the -dev base in order to provide a shell for the application (migrations, etc).
+# NOTE: the runtime stage requires the -dev base in order to provide a shell for the application
+# to run Django management commands.
 FROM dhi.io/python:${PYTHON_VERSION} AS runtime
 LABEL org.opencontainers.image.description="DBCA Planning Referral System" \
   org.opencontainers.image.source="https://github.com/dbca-wa/prs" \
