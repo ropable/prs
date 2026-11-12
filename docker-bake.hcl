@@ -82,3 +82,13 @@ target "typesense" {
   cache-from = ["type=registry,ref=ghcr.io/dbca-wa/typesense:${CACHE_TAG}"]
   cache-to   = ["type=registry,ref=ghcr.io/dbca-wa/typesense:${CACHE_TAG},mode=max,ignore-error=true"]
 }
+
+# CI-only: GitHub Actions cache, and always refresh base images so any
+# scheduled rebuild picks up upstream security fixes.
+# Note that CI overrides tags in multi-build.yml via set: ci.tags=...
+target "ci" {
+  inherits   = ["app"]
+  cache-from = ["type=gha"]
+  cache-to   = ["type=gha,mode=max"]
+  pull       = true
+}
